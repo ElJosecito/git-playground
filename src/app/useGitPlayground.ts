@@ -10,7 +10,7 @@
 // real `gitpg:v1` round trip (falling back to `ejemplo()` only on
 // missing/corrupt storage) — until then this hook boots the same fixture
 // every time, same as a fresh install of the original.
-import { useCallback, useEffect, useLayoutEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef } from 'react';
 import { GitEngine } from '../engine';
 import type { CommandResult, GitEvent, RepoState } from '../engine/types';
 import { createInitialPlaygroundState, playgroundReducer } from './playgroundReducer';
@@ -18,6 +18,8 @@ import type { LineInput, PlaygroundState } from './playgroundReducer';
 import { parseLine } from '../ui/markup';
 import { loadHistory, saveHistory } from './history';
 import { installDebugApi } from './debugApi';
+import type { CreatePullRequestInput } from '../engine/hosting/create';
+import type { MergeStrategy } from '../engine/hosting/types';
 
 /** The slice of `useChoreography`'s result that this hook drives, per
  * design's data-flow diagram: "useGitPlayground (handlers): choreo.
@@ -48,6 +50,25 @@ function createBootState(initialRepo?: RepoState): PlaygroundState {
 }
 
 export type ConflictMode = 'mia' | 'suya' | 'ambas';
+
+/** Result of a simulated-hosting action (design's data-flow diagram: "res =
+ * GitEngine.mergePullRequest(...) ... error -> {ok:false,lines} -> inline
+ * message / ok -> applyResult"). On failure, `lines` are the engine's own
+ * markup-encoded `salida` (e.g. the push-hint rejection), meant for the
+ * ORIGINATING form/view to render inline — never the terminal. */
+export type HostingOutcome = { ok: true } | { ok: false; lines: string[] };
+
+/** The `hosting` handler group (design: "Op failures ... Handler skips
+ * applyResult on error"). Every member follows the same shape: error ->
+ * `{ok:false,lines}` for the caller to render inline, success -> applyResult
+ * (persist + choreo.after -> explicar() toast) and `{ok:true}`. */
+export interface HostingHandlers {
+  create(input: CreatePullRequestInput): HostingOutcome;
+  comment(id: number, body: string): HostingOutcome;
+  close(id: number): HostingOutcome;
+  reopen(id: number): HostingOutcome;
+  merge(id: number, strategy: MergeStrategy, deleteBranch: boolean): HostingOutcome;
+}
 
 /** Phase 7 (tasks.md 7.3/7.4): injected by `PlaygroundShell` to fold the full
  * `gitpg:v1` `{repo, theme, hist}` round trip (owned by `usePersistence`)
@@ -93,6 +114,7 @@ export interface UseGitPlaygroundResult {
    * the oracle's `toggleTheme` calling `this.save()` with no repo arg
    * (defaults to `this.state.repo`). */
   persistNow(): void;
+  hosting: HostingHandlers;
 }
 
 export function useGitPlayground(choreo?: ChoreographyApi, persistence?: PersistenceDeps): UseGitPlaygroundResult {
@@ -286,6 +308,69 @@ export function useGitPlayground(choreo?: ChoreographyApi, persistence?: Persist
     persist(repoRef.current ?? GitEngine.vacio(), historyRef.current);
   }, [persist]);
 
+  // Hosting handler group (design's data-flow diagram). Unlike `run()`,
+  // there is no terminal echo/prefix line — on success `applyResult` still
+  // fires (persist + choreo.after -> explicar() toast), but the engine's own
+  // `salida` is empty for every hosting op (spec "Action Result Feedback"),
+  // so no line actually lands in the terminal. On error, `applyResult` is
+  // deliberately skipped (`estado`/repoRef stay untouched) and the engine's
+  // `salida` (the rejection's markup-encoded lines, e.g. the push hint) is
+  // handed back to the caller for inline display instead.
+  const hostingCreate = useCallback(
+    (input: CreatePullRequestInput): HostingOutcome => {
+      const repo = repoRef.current ?? GitEngine.vacio();
+      const res = GitEngine.createPullRequest(repo, input);
+      if (res.error) return { ok: false, lines: res.salida };
+      applyResult(res, null);
+      return { ok: true };
+    },
+    [applyResult],
+  );
+  const hostingComment = useCallback(
+    (id: number, body: string): HostingOutcome => {
+      const repo = repoRef.current ?? GitEngine.vacio();
+      const res = GitEngine.commentPullRequest(repo, id, body);
+      if (res.error) return { ok: false, lines: res.salida };
+      applyResult(res, null);
+      return { ok: true };
+    },
+    [applyResult],
+  );
+  const hostingClose = useCallback(
+    (id: number): HostingOutcome => {
+      const repo = repoRef.current ?? GitEngine.vacio();
+      const res = GitEngine.closePullRequest(repo, id);
+      if (res.error) return { ok: false, lines: res.salida };
+      applyResult(res, null);
+      return { ok: true };
+    },
+    [applyResult],
+  );
+  const hostingReopen = useCallback(
+    (id: number): HostingOutcome => {
+      const repo = repoRef.current ?? GitEngine.vacio();
+      const res = GitEngine.reopenPullRequest(repo, id);
+      if (res.error) return { ok: false, lines: res.salida };
+      applyResult(res, null);
+      return { ok: true };
+    },
+    [applyResult],
+  );
+  const hostingMerge = useCallback(
+    (id: number, strategy: MergeStrategy, deleteBranch: boolean): HostingOutcome => {
+      const repo = repoRef.current ?? GitEngine.vacio();
+      const res = GitEngine.mergePullRequest(repo, id, strategy, deleteBranch);
+      if (res.error) return { ok: false, lines: res.salida };
+      applyResult(res, null);
+      return { ok: true };
+    },
+    [applyResult],
+  );
+  const hosting: HostingHandlers = useMemo(
+    () => ({ create: hostingCreate, comment: hostingComment, close: hostingClose, reopen: hostingReopen, merge: hostingMerge }),
+    [hostingCreate, hostingComment, hostingClose, hostingReopen, hostingMerge],
+  );
+
   // Install the debug API once and route calls through a ref to the latest
   // handlers: `run`/`loadRepo` change identity whenever `choreo` does, and
   // reinstalling `window.GitPlayground` on every render is needless churn.
@@ -319,5 +404,6 @@ export function useGitPlayground(choreo?: ChoreographyApi, persistence?: Persist
     toggleResetMenu,
     clearLines,
     persistNow,
+    hosting,
   };
 }

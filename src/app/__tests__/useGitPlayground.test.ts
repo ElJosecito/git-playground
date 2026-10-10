@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useGitPlayground } from '../useGitPlayground';
 import { vacio } from '../../engine/state';
+import { GitEngine } from '../../engine';
 import type { CommandResult, RepoState } from '../../engine/types';
 
 // Minimal stand-in for `useChoreography`'s result (design's data-flow
@@ -379,6 +380,198 @@ describe('useGitPlayground', () => {
       expect(afterNext2).toBe(prepNext2);
       expect(afterRes2.estado).toBe(prepNext2);
       expect(afterNext1).toBe(afterPrev2);
+    });
+  });
+
+  // New behavior (design's data-flow diagram: "useGitPlayground.hosting.
+  // merge(id,...) -> ... -> error -> {ok:false,lines} -> inline message /
+  // ok -> applyResult"). `hosting.create` is the first handler in that
+  // group (tasks.md 4.7 adds comment/close/reopen/merge the same way).
+  describe('useGitPlayground / hosting.create', () => {
+    it('rejects and returns inline push-hint guidance lines, without touching the terminal or creating a PR, when the source branch is not on origin', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      const linesBefore = result.current.state.lines.length;
+      const repoBefore = result.current.state.repo;
+
+      let outcome: ReturnType<typeof result.current.hosting.create> | undefined;
+      act(() => {
+        outcome = result.current.hosting.create({ source: 'feature', target: 'main', title: 'Mi cambio', body: '' });
+      });
+
+      expect(outcome).toEqual({ ok: false, lines: expect.any(Array) });
+      const lines = (outcome as { ok: false; lines: string[] }).lines;
+      expect(lines.join('\n')).toContain('git push -u origin feature');
+      // No terminal output (design "Action Result Feedback") and no state
+      // mutation at all — `applyResult` was never called on the error path.
+      expect(result.current.state.lines.length).toBe(linesBefore);
+      expect(result.current.state.repo).toBe(repoBefore);
+      expect(GitEngine.listPullRequests(result.current.state.repo!)).toHaveLength(0);
+    });
+
+    it('creates the PR and applies the result via applyResult (persisted, no terminal output) when the source is pushed and ahead of the target', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      act(() => {
+        result.current.run('git checkout -b feature');
+        result.current.run('echo hola > notas.txt');
+        result.current.run('git add notas.txt');
+        result.current.run('git commit -m feature');
+        result.current.run('git push -u origin feature');
+      });
+      const linesBefore = result.current.state.lines.length;
+
+      let outcome: ReturnType<typeof result.current.hosting.create> | undefined;
+      act(() => {
+        outcome = result.current.hosting.create({ source: 'feature', target: 'main', title: 'Mi cambio', body: '' });
+      });
+
+      expect(outcome).toEqual({ ok: true });
+      expect(result.current.state.lines.length).toBe(linesBefore);
+      const prs = GitEngine.listPullRequests(result.current.state.repo!);
+      expect(prs).toHaveLength(1);
+      expect(prs[0]).toMatchObject({ source: 'feature', target: 'main', title: 'Mi cambio', status: 'open' });
+    });
+  });
+
+  // Task 4.7/4.8: `comment`/`close`/`reopen`/`merge` added to the same
+  // `hosting` object as `create` (tasks.md Phase 4), following the exact
+  // same error/ok shape (design's data-flow diagram).
+  describe('useGitPlayground / hosting.comment, close, reopen, merge', () => {
+    function openPrRepo(result: { current: ReturnType<typeof useGitPlayground> }): void {
+      act(() => {
+        result.current.run('git checkout -b feature');
+        result.current.run('echo hola > notas.txt');
+        result.current.run('git add notas.txt');
+        result.current.run('git commit -m feature');
+        result.current.run('git push -u origin feature');
+      });
+      act(() => {
+        result.current.hosting.create({ source: 'feature', target: 'main', title: 'Mi cambio', body: '' });
+      });
+    }
+
+    it('comment: rejects with inline lines and does not touch the terminal/repo when the body is empty', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      openPrRepo(result);
+      const linesBefore = result.current.state.lines.length;
+      const repoBefore = result.current.state.repo;
+
+      let outcome: ReturnType<typeof result.current.hosting.comment> | undefined;
+      act(() => {
+        outcome = result.current.hosting.comment(1, '   ');
+      });
+
+      expect(outcome).toEqual({ ok: false, lines: expect.any(Array) });
+      expect(result.current.state.lines.length).toBe(linesBefore);
+      expect(result.current.state.repo).toBe(repoBefore);
+    });
+
+    it('comment: applies the result (persisted, no terminal output) on success', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      openPrRepo(result);
+      const linesBefore = result.current.state.lines.length;
+
+      let outcome: ReturnType<typeof result.current.hosting.comment> | undefined;
+      act(() => {
+        outcome = result.current.hosting.comment(1, 'Un comentario');
+      });
+
+      expect(outcome).toEqual({ ok: true });
+      expect(result.current.state.lines.length).toBe(linesBefore);
+      const pr = GitEngine.listPullRequests(result.current.state.repo!)[0]!;
+      expect(pr.timeline.at(-1)).toMatchObject({ kind: 'comment', author: 'Tú', body: 'Un comentario' });
+    });
+
+    it('close: rejects an already-closed PR with inline lines', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      openPrRepo(result);
+      act(() => {
+        result.current.hosting.close(1);
+      });
+      const repoBefore = result.current.state.repo;
+
+      let outcome: ReturnType<typeof result.current.hosting.close> | undefined;
+      act(() => {
+        outcome = result.current.hosting.close(1);
+      });
+
+      expect(outcome).toEqual({ ok: false, lines: expect.any(Array) });
+      expect(result.current.state.repo).toBe(repoBefore);
+    });
+
+    it('close: applies the result and marks the PR closed on success', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      openPrRepo(result);
+
+      let outcome: ReturnType<typeof result.current.hosting.close> | undefined;
+      act(() => {
+        outcome = result.current.hosting.close(1);
+      });
+
+      expect(outcome).toEqual({ ok: true });
+      expect(GitEngine.listPullRequests(result.current.state.repo!)[0]!.status).toBe('closed');
+    });
+
+    it('reopen: rejects a PR that is not closed with inline lines', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      openPrRepo(result);
+      const repoBefore = result.current.state.repo;
+
+      let outcome: ReturnType<typeof result.current.hosting.reopen> | undefined;
+      act(() => {
+        outcome = result.current.hosting.reopen(1);
+      });
+
+      expect(outcome).toEqual({ ok: false, lines: expect.any(Array) });
+      expect(result.current.state.repo).toBe(repoBefore);
+    });
+
+    it('reopen: applies the result and marks the PR open on success', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      openPrRepo(result);
+      act(() => {
+        result.current.hosting.close(1);
+      });
+
+      let outcome: ReturnType<typeof result.current.hosting.reopen> | undefined;
+      act(() => {
+        outcome = result.current.hosting.reopen(1);
+      });
+
+      expect(outcome).toEqual({ ok: true });
+      expect(GitEngine.listPullRequests(result.current.state.repo!)[0]!.status).toBe('open');
+    });
+
+    it('merge: rejects an unknown PR id with inline lines, without touching the terminal', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      openPrRepo(result);
+      const linesBefore = result.current.state.lines.length;
+      const repoBefore = result.current.state.repo;
+
+      let outcome: ReturnType<typeof result.current.hosting.merge> | undefined;
+      act(() => {
+        outcome = result.current.hosting.merge(999, 'squash', false);
+      });
+
+      expect(outcome).toEqual({ ok: false, lines: expect.any(Array) });
+      expect(result.current.state.lines.length).toBe(linesBefore);
+      expect(result.current.state.repo).toBe(repoBefore);
+    });
+
+    it('merge: applies the result (persisted, no terminal output) and marks the PR merged on success, deleting the source branch when asked', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      openPrRepo(result);
+      const linesBefore = result.current.state.lines.length;
+
+      let outcome: ReturnType<typeof result.current.hosting.merge> | undefined;
+      act(() => {
+        outcome = result.current.hosting.merge(1, 'squash', true);
+      });
+
+      expect(outcome).toEqual({ ok: true });
+      expect(result.current.state.lines.length).toBe(linesBefore);
+      const pr = GitEngine.listPullRequests(result.current.state.repo!)[0]!;
+      expect(pr.status).toBe('merged');
+      expect(result.current.state.repo!.remote.branches.feature).toBeUndefined();
     });
   });
 });

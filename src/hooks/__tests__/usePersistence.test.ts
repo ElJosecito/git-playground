@@ -5,6 +5,9 @@ import { renderHook, act } from '@testing-library/react';
 import { usePersistence, PERSISTENCE_KEY } from '../usePersistence';
 import { useGitPlayground } from '../../app/useGitPlayground';
 import { vacio } from '../../engine/state';
+import { hostingOf } from '../../engine/hosting/state';
+import { createPr } from '../../engine/hosting/create';
+import { laneFor, nuevoCommit } from '../../engine/state';
 
 // Oracle round trip (design-handoff/Git Playground.dc.html):
 // boot: `let saved=null;try{saved=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){}
@@ -103,6 +106,48 @@ describe('usePersistence', () => {
     const first = result.current;
     rerender();
     expect(result.current).toBe(first);
+  });
+
+  // Task 4.10/4.11: old `gitpg:v1` saves predate the simulated-hosting
+  // feature and never had a `repo.hosting` key. `hosting` is optional
+  // (design.md "Field shape" decision), so a pre-hosting fixture must load
+  // exactly like today, with `hostingOf()` deriving a fresh default on
+  // first read — no crash, no silent data loss.
+  it('loads a pre-hosting gitpg:v1 fixture (no `hosting` key on the saved repo) without crashing, and hostingOf() defaults it', () => {
+    const preHostingRepo = { ...vacio(), v: 1 as const };
+    expect('hosting' in preHostingRepo).toBe(false);
+    localStorage.setItem(PERSISTENCE_KEY, JSON.stringify({ repo: preHostingRepo, theme: 'dark', hist: [] }));
+
+    const { result } = renderHook(() => usePersistence());
+    expect(result.current.initial.repo.hosting).toBeUndefined();
+    expect(hostingOf(result.current.initial.repo)).toEqual({ prs: [], nextId: 1, clock: 0 });
+  });
+
+  // Task 4.11/4.12: a save MADE AFTER a PR exists must round-trip the
+  // `hosting` key byte-for-byte (same `save()`/`readInitial()` path as
+  // `repo`/`theme`/`hist` — no special-casing needed since `hosting` is
+  // just another field on `RepoState`).
+  it('round-trips a saved repo that already has a `hosting` key with pull requests', () => {
+    const repo = { ...vacio(), v: 1 as const };
+    repo.inited = true;
+    const lane = laneFor(repo, 'main');
+    const root = nuevoCommit(repo, { msg: 'root', parents: [], tree: { 'f.txt': 'A' }, lane, t: 0 });
+    repo.branches.main = root.hash;
+    repo.remote.branches.main = root.hash;
+    repo.remote.known[root.hash] = 1;
+    const feature = nuevoCommit(repo, { msg: 'feature', parents: [root.hash], tree: { 'f.txt': 'A2' }, lane: laneFor(repo, 'feature'), t: 1 });
+    repo.branches.feature = feature.hash;
+    repo.remote.branches.feature = feature.hash;
+    repo.remote.known[feature.hash] = 1;
+    createPr(repo, { source: 'feature', target: 'main', title: 'Mi PR', body: '' });
+
+    const { result } = renderHook(() => usePersistence());
+    act(() => result.current.save({ repo, theme: 'dark', hist: [] }));
+
+    const { result: reloaded } = renderHook(() => usePersistence());
+    expect(reloaded.current.initial.repo.hosting).toEqual(repo.hosting);
+    expect(hostingOf(reloaded.current.initial.repo).prs).toHaveLength(1);
+    expect(hostingOf(reloaded.current.initial.repo).prs[0]).toMatchObject({ title: 'Mi PR', source: 'feature', target: 'main' });
   });
 
   // Integration regression (mirrors PlaygroundShell's wiring): a `persist`
