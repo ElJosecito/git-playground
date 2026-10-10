@@ -1,0 +1,92 @@
+/* Design tokens ported byte-for-byte from the oracle's inline <style> block
+ * (design-handoff/Git Playground.dc.html, lines 16-17), plus the additional
+ * tokens design.md documents for the React port (D11: "Tokens (theme.css)").
+ * Phase 7 (tasks.md 7.1/7.2) wires the `useTheme` hook that toggles
+ * `data-theme` and persists the choice; this file only defines the token
+ * values, pulled forward into Phase 3 so the terminal/canvas render with the
+ * real palette instead of unstyled defaults. Dark is the default theme (no
+ * attribute needed); `[data-theme="light"]` overrides it.
+ */
+
+:root {
+  --bg-canvas: #0b0d12;
+  --bg-grid-dot: #1c212b;
+  --surface: rgba(22, 25, 33, 0.82);
+  --surface-solid: #161921;
+  --surface-terminal: #14161c;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text-primary: #e8eaf0;
+  --text-secondary: #9aa1b2;
+  --text-muted: #5f6678;
+  --head: #ffffff;
+  --head-ink: #0b0d12;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --ghost: rgba(154, 161, 178, 0.25);
+  --t-green: #4ade80;
+  --t-red: #f87171;
+  --t-yellow: #fbbf24;
+  --t-cyan: #67e8f9;
+  --remote-fill: rgba(255, 255, 255, 0.015);
+  --hover: rgba(255, 255, 255, 0.06);
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--border);
+  --dur-fast: 150ms;
+  --dur-base: 280ms;
+  --dur-slow: 450ms;
+  --dur-camera: 700ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --ease-spring-soft: cubic-bezier(0.34, 1.36, 0.64, 1);
+
+  --font-sans: Geist, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+  --space-6: 14px;
+  --space-7: 16px;
+
+  --z-strip: 20;
+  --z-actions: 25;
+  --z-term: 30;
+  --z-resolver: 35;
+  --z-toast: 40;
+  --z-editor: 45;
+  --z-tip: 50;
+  --z-overlay: 60;
+}
+
+:root[data-theme='light'] {
+  --bg-canvas: #f5f6f8;
+  --bg-grid-dot: #d5d9e1;
+  --surface: rgba(255, 255, 255, 0.86);
+  --surface-solid: #ffffff;
+  --surface-terminal: #ffffff;
+  --border: rgba(15, 20, 30, 0.09);
+  --border-strong: rgba(15, 20, 30, 0.2);
+  --text-primary: #14171f;
+  --text-secondary: #4e5566;
+  --text-muted: #7f8696;
+  --head: #14171f;
+  --head-ink: #ffffff;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #dc2626;
+  --t-green: #15803d;
+  --t-red: #dc2626;
+  --t-yellow: #a16207;
+  --t-cyan: #0e7490;
+  --remote-fill: rgba(15, 20, 30, 0.02);
+  --hover: rgba(15, 20, 30, 0.05);
+  --shadow: 0 20px 50px rgba(20, 25, 40, 0.14), 0 0 0 1px var(--border);
+}
