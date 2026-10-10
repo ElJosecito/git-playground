@@ -1,0 +1,44 @@
+/* Ported from the DC template's camera control bar
+ * (design-handoff/Git Playground.dc.html, lines 184-189). */
+
+.bar {
+  position: absolute;
+  right: 16px;
+  z-index: var(--z-actions);
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+}
+
+.button {
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
+.zoomButton {
+  width: 30px;
+  font-size: 15px;
+}
+
+.textButton {
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.headButton {
+  padding: 0 9px;
+  font: 500 11px var(--font-mono);
+}

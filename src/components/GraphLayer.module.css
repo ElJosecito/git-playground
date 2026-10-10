@@ -1,0 +1,108 @@
+/* Ported from the DC template's `buildGraph(repo)`
+ * (design-handoff/Git Playground.dc.html, lines 434-471). Static layout
+ * constants (durations, easings, cursor, pointer-events) live here per
+ * design D11; data-driven values (position, color, opacity) stay inline on
+ * the elements in GraphLayer.tsx. */
+
+.svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.remoteBoxLabel {
+  font: 500 12px var(--font-mono);
+  fill: var(--text-secondary);
+}
+
+.remoteBoxCaption {
+  font: 12px Geist, sans-serif;
+  fill: var(--text-muted);
+}
+
+.remoteLabelText {
+  font: 12px var(--font-mono);
+}
+
+.link {
+  fill: none;
+  stroke-width: 1.5px;
+  stroke-dasharray: 2 5;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+.edge {
+  fill: none;
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+  transition: opacity 450ms, d 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.remoteEdge {
+  fill: none;
+  stroke-width: 2px;
+  stroke-linecap: round;
+  opacity: 0.45;
+}
+
+.phantomEdge {
+  fill: none;
+  stroke: var(--danger);
+  stroke-width: 2.5px;
+  stroke-dasharray: 6 5;
+  stroke-linecap: round;
+}
+
+.phantomGroup {
+  cursor: help;
+}
+
+.phantomText {
+  font: 600 13px var(--font-mono);
+  fill: var(--danger);
+  text-anchor: middle;
+}
+
+.stashGroup {
+  cursor: default;
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stashLabel {
+  font: 500 12px var(--font-mono);
+  fill: var(--text-primary);
+  text-anchor: middle;
+}
+
+.stashCaption {
+  font: 11px Geist, sans-serif;
+  fill: var(--text-muted);
+  text-anchor: middle;
+}
+
+.node {
+  outline: none;
+  cursor: pointer;
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rnode {
+  cursor: default;
+}
+
+.nodeLabel {
+  font: 500 10px var(--font-mono);
+  fill: var(--text-muted);
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.refLabel {
+  cursor: default;
+}
+
+.refLabelText {
+  font: 12px var(--font-mono);
+  text-anchor: middle;
+}

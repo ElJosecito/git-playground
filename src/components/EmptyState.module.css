@@ -1,0 +1,37 @@
+/* Ported from the DC template's empty-state placeholder
+ * (design-handoff/Git Playground.dc.html, lines 29-35). */
+
+.root {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  pointer-events: none;
+  max-width: 360px;
+  padding: 0 24px;
+}
+
+.ring {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px dashed var(--text-muted);
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-wrap: pretty;
+  line-height: 1.5;
+}

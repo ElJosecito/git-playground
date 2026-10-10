@@ -1,0 +1,146 @@
+/* Ported from the DC template's conflict-resolver panel
+ * (design-handoff/Git Playground.dc.html, lines 131-164). */
+
+.panel {
+  position: absolute;
+  right: 16px;
+  top: 60px;
+  z-index: var(--z-resolver);
+  width: min(420px, calc(100% - 32px));
+  max-height: calc(100% - 140px);
+  overflow: auto;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(248, 113, 113, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.header {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.hideButton {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.conflict {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: 4px;
+}
+
+.fileRow {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.fileName {
+  font: 500 12px var(--font-mono);
+  color: var(--danger);
+  flex: 1;
+}
+
+.state {
+  font-size: 11px;
+}
+
+.sides {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.sideLabel {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.sideLabelMono {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.sideContent {
+  font: 12px/1.5 var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: var(--space-3);
+  border-radius: 6px;
+  background: var(--surface-terminal);
+  box-shadow: inset 0 0 0 1px var(--border);
+  max-height: 120px;
+  overflow: auto;
+  color: var(--text-primary);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.actionButton:hover {
+  background: var(--hover);
+}
+
+.editButton {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+}

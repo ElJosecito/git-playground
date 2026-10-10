@@ -1,0 +1,11 @@
+/* Ported from the DC template's outer wrapper
+ * (design-handoff/Git Playground.dc.html, line 25). The dotted-grid canvas
+ * background lives in `Canvas.module.css` (tasks.md 4.7/4.8). */
+
+.root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+}

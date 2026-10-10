@@ -1,0 +1,50 @@
+/* Ported from the DC template's top-center toast stack
+ * (design-handoff/Git Playground.dc.html, lines 107-114). */
+
+.stack {
+  position: absolute;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  pointer-events: none;
+  width: min(460px, calc(100% - 32px));
+}
+
+.toast {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+  transition:
+    opacity 280ms var(--ease-out),
+    transform 280ms var(--ease-out);
+  max-width: 100%;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 12px var(--font-mono);
+}
+
+.message {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  text-wrap: pretty;
+  padding-top: 1px;
+}

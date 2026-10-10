@@ -1,0 +1,10 @@
+/* Ported from the DC template's visually-hidden announcer
+ * (design-handoff/Git Playground.dc.html, line 217). */
+
+.root {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}

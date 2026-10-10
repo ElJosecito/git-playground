@@ -1,0 +1,14 @@
+/* Ported from the DC template's canvas wrapper
+ * (design-handoff/Git Playground.dc.html, line 27). `background-size`/
+ * `background-position` are overridden imperatively by `useCamera`'s
+ * `apply()` (design D10) as the camera pans/zooms; these are only the
+ * resting defaults (zoom level 1, origin at 0,0). */
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  cursor: grab;
+  background-image: radial-gradient(var(--bg-grid-dot) 1.1px, transparent 1.4px);
+  background-size: 24px 24px;
+}

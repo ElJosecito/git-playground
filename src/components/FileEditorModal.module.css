@@ -1,0 +1,83 @@
+/* Ported from the DC template's inline file-editor modal
+ * (design-handoff/Git Playground.dc.html, lines 169-182). */
+
+.modal {
+  position: absolute;
+  left: 50%;
+  top: 14%;
+  transform: translateX(-50%);
+  z-index: var(--z-editor);
+  width: min(520px, calc(100% - 32px));
+  border-radius: var(--radius-lg);
+  background: var(--surface-terminal);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border);
+}
+
+.headerLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.fileName {
+  font: 500 12px var(--font-mono);
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.textarea {
+  min-height: 200px;
+  resize: vertical;
+  border: none;
+  outline: none;
+  padding: var(--space-5) var(--space-6);
+  background: transparent;
+  color: var(--text-primary);
+  font: 13px/1.55 var(--font-mono);
+}
+
+.footer {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--border);
+}
+
+.cancel {
+  height: 30px;
+  padding: 0 var(--space-5);
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.save {
+  height: 30px;
+  padding: 0 var(--space-6);
+  border-radius: 6px;
+  border: none;
+  background: var(--text-primary);
+  color: var(--bg-canvas);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}

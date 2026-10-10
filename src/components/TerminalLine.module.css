@@ -1,0 +1,7 @@
+/* Ported from the DC template's output-line wrapper style
+ * (design-handoff/Git Playground.dc.html, line 203). */
+.line {
+  min-height: 1.55em;
+  white-space: pre-wrap;
+  tab-size: 4;
+}

@@ -1,0 +1,121 @@
+/* Ported from the DC template's terminal markup
+ * (design-handoff/Git Playground.dc.html, lines 191-214). */
+
+.window {
+  position: absolute;
+  z-index: var(--z-term);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-terminal);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.header {
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  position: relative;
+  user-select: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.headerDesktop {
+  cursor: grab;
+}
+
+.headerMobile {
+  cursor: default;
+}
+
+.trafficLights {
+  display: flex;
+  gap: 8px;
+  padding-left: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.dotRed {
+  background: #ff5f57;
+}
+
+.dotYellow {
+  background: #febc2e;
+}
+
+.dotGreen {
+  background: #28c840;
+}
+
+.title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.output {
+  flex: 1;
+  overflow: auto;
+  padding: 10px 14px 12px;
+  font: 13px/1.55 var(--font-mono);
+  word-break: break-word;
+  tab-size: 4;
+  cursor: text;
+}
+
+.promptRow {
+  display: flex;
+  align-items: baseline;
+}
+
+.promptSeg {
+  white-space: pre;
+}
+
+.input {
+  flex: 1;
+  min-width: 60px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: 13px/1.55 var(--font-mono);
+  padding: 0;
+  caret-color: var(--text-primary);
+}
+
+.resizeHandle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background: linear-gradient(
+    135deg,
+    transparent 55%,
+    var(--border-strong) 55%,
+    var(--border-strong) 62%,
+    transparent 62%,
+    transparent 72%,
+    var(--border-strong) 72%,
+    var(--border-strong) 79%,
+    transparent 79%
+  );
+}

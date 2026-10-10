@@ -1,0 +1,179 @@
+/* Ported from the DC template's files-strip panel
+ * (design-handoff/Git Playground.dc.html, lines 37-86). */
+
+.panel {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  z-index: var(--z-strip);
+  max-width: calc(100% - 32px);
+  width: 440px;
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.panelMobile {
+  width: calc(100% - 24px);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  cursor: pointer;
+  user-select: none;
+}
+
+.headerTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.headerSummary {
+  font: 12px var(--font-mono);
+  color: var(--text-muted);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: transform 280ms var(--ease-out);
+}
+
+.chevronClosed {
+  transform: rotate(-90deg);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr) 14px minmax(0, 1fr);
+  gap: 4px;
+  padding: 0 10px 12px;
+  align-items: start;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.zone {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.zoneHeader {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 0 4px 4px;
+}
+
+.commitZoneHeader {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 0 4px 4px;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 6px;
+}
+
+.commitHeaderHash {
+  font-family: var(--font-mono);
+  color: var(--t-yellow);
+}
+
+.arrow {
+  color: var(--text-muted);
+  font-size: 11px;
+  padding-top: 1px;
+  text-align: center;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  min-width: 0;
+}
+
+.chipDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chipDotOutline {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--text-muted);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.chipName {
+  font: 12px var(--font-mono);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chipCommitName {
+  font: 12px var(--font-mono);
+  color: var(--text-secondary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chipLetter {
+  font: 600 10px var(--font-mono);
+}
+
+.empty {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 2px 6px;
+}
+
+.mobileButton {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: var(--z-strip);
+  height: 36px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.mobileButtonCount {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-size: 12px;
+}

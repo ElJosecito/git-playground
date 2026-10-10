@@ -1,0 +1,8 @@
+/* 1:1 port of the DC template's overlay container inline style
+ * (design-handoff/Git Playground.dc.html, line 216). */
+.overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-overlay);
+}

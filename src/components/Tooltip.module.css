@@ -1,0 +1,73 @@
+/* Ported from the DC template's hover tooltip
+ * (design-handoff/Git Playground.dc.html, lines 116-129). */
+
+.tip {
+  position: absolute;
+  z-index: var(--z-tip);
+  pointer-events: none;
+  max-width: 260px;
+  width: max-content;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  transform: rotate(45deg);
+  background: var(--surface-solid);
+}
+
+.titleRow {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hash {
+  font: 12px var(--font-mono);
+  color: var(--t-yellow);
+}
+
+.msg {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 10px;
+  font-size: 12px;
+}
+
+.rowKey {
+  color: var(--text-muted);
+}
+
+.rowValue {
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.note {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  text-wrap: pretty;
+}

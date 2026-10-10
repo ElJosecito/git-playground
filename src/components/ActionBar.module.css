@@ -1,0 +1,119 @@
+/* Ported from the DC template's top-right action bar
+ * (design-handoff/Git Playground.dc.html, lines 88-105). */
+
+.bar {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  z-index: var(--z-actions);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100% - 140px);
+}
+
+.chip {
+  height: 32px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--text-primary);
+}
+
+.mateButton {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.mateDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--text-secondary);
+}
+
+.themeButton {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 14px;
+}
+
+.resetWrap {
+  position: relative;
+}
+
+.panel {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  width: 260px;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.panelTitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.panelBody {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.option {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.option:hover {
+  background: var(--hover);
+}
+
+.optionTitle {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.optionSubtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cancel {
+  padding: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
