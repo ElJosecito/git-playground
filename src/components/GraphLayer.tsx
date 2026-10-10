@@ -35,6 +35,10 @@ export interface GraphHandlers {
   onHover?(kind: HoverKind, id: string, pos: Point, r: number): void;
   onUnhover?(): void;
   onNodeKeyDown?(e: KeyboardEvent<SVGGElement>, hash: Hash): void;
+  /** Clicking (or Enter/Space on) the remote box opens the simulated
+   * hosting web view — one of its two entry points (design.md "File
+   * Changes"), the other being `ActionBar`'s "Pull requests (n)" button. */
+  onRemoteBoxClick?(): void;
 }
 
 export interface GraphLayerProps {
@@ -75,7 +79,21 @@ function GraphLayerComponent({ layout: L, tipId, worldRef, refs, handlers, fxRef
     <svg width="100%" height="100%" className={styles.svg}>
       <g ref={worldRef}>
         {L.rbox && (
-          <g key="rbox">
+          <g
+            key="rbox"
+            role={handlers?.onRemoteBoxClick ? 'button' : undefined}
+            tabIndex={handlers?.onRemoteBoxClick ? 0 : undefined}
+            aria-label={handlers?.onRemoteBoxClick ? 'Ver pull requests en origin' : undefined}
+            className={styles.remoteBoxGroup}
+            onClick={handlers?.onRemoteBoxClick}
+            onKeyDown={(e) => {
+              if (!handlers?.onRemoteBoxClick) return;
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handlers.onRemoteBoxClick();
+              }
+            }}
+          >
             <rect
               x={L.rbox.x0}
               y={L.rbox.y0}

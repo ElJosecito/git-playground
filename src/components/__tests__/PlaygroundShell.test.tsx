@@ -77,4 +77,56 @@ describe('PlaygroundShell', () => {
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(screen.getByText(/Escribe git init en la terminal/)).toBeInTheDocument();
   });
+
+  // New behavior (design.md "File Changes": the hosting web view overlays
+  // the canvas, reachable from ActionBar's "Pull requests (n)" button and
+  // from clicking the remote box — tasks.md 3.4).
+  it('opens the hosting web view from the ActionBar "Pull requests" button and closes it again', async () => {
+    const user = userEvent.setup();
+    render(<PlaygroundShell />);
+    await user.click(screen.getByText(/Pull requests \(\d+\)/));
+    expect(screen.getByText('github.com/tu/proyecto/pulls')).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Volver al repositorio'));
+    expect(screen.queryByText('github.com/tu/proyecto/pulls')).not.toBeInTheDocument();
+  });
+
+  it('opens the hosting web view by clicking the remote box in the graph, without unmounting the graph underneath', async () => {
+    const user = userEvent.setup();
+    render(<PlaygroundShell />);
+    await user.click(screen.getByRole('button', { name: 'Ver pull requests en origin' }));
+    expect(screen.getByText('github.com/tu/proyecto/pulls')).toBeInTheDocument();
+    // The graph stays mounted underneath (design: "Overlay (inert canvas).
+    // Graph stays mounted").
+    expect(screen.getByRole('button', { name: 'Ver pull requests en origin' })).toBeInTheDocument();
+  });
+
+  // End-to-end Phase 4 wiring: create a PR via the web view's own form, open
+  // its detail by clicking the list row, and merge it via the merge box —
+  // exercising `PlaygroundShell`'s `prView`/handler wiring (tasks.md 4.1-4.9)
+  // on top of Phase 3's create flow, entirely through the UI (no terminal
+  // output for any of these hosting actions).
+  it('creates a PR, opens its detail from the list, and merges it via the merge box', async () => {
+    const user = userEvent.setup();
+    render(<PlaygroundShell />);
+    const input = screen.getByLabelText('Comando');
+    await user.type(input, 'git checkout -b feature{Enter}');
+    await user.type(input, 'echo hola > notas.txt{Enter}');
+    await user.type(input, 'git add notas.txt{Enter}');
+    await user.type(input, 'git commit -m feature{Enter}');
+    await user.type(input, 'git push -u origin feature{Enter}');
+
+    await user.click(screen.getByText(/Pull requests \(\d+\)/));
+    await user.click(screen.getByText('Nuevo pull request'));
+    await user.type(screen.getByLabelText('Comparar'), 'feature');
+    await user.type(screen.getByLabelText('Título'), 'Mi cambio');
+    await user.click(screen.getByText('Crear pull request'));
+
+    await user.click(screen.getByText('Mi cambio'));
+    expect(screen.getByRole('tablist')).toBeInTheDocument();
+    expect(screen.getByText('Fusionar pull request')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Fusionar pull request'));
+    await user.click(screen.getByLabelText('Volver al repositorio'));
+    expect(screen.queryByText('github.com/tu/proyecto/pulls')).not.toBeInTheDocument();
+  });
 });

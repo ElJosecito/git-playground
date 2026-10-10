@@ -18,6 +18,9 @@ describe('ActionBar', () => {
       onToggleReset: vi.fn(),
       onResetExample: vi.fn(),
       onResetEmpty: vi.fn(),
+      showHosting: true,
+      hostingCount: 0,
+      onOpenHosting: vi.fn(),
       ...overrides,
     };
   }
@@ -68,5 +71,26 @@ describe('ActionBar', () => {
     expect(p.onResetEmpty).toHaveBeenCalledTimes(1);
     await user.click(screen.getByText('Cancelar'));
     expect(p.onToggleReset).toHaveBeenCalledTimes(1);
+  });
+
+  // New behavior (design's "File Changes": "Pull requests (n)" button on
+  // ActionBar, one of the two entry points into the simulated hosting web
+  // view, alongside the remote-box click in GraphLayer).
+  it('shows the "Pull requests (n)" button with the open-PR count when showHosting is true', () => {
+    render(<ActionBar {...props({ showHosting: true, hostingCount: 2 })} />);
+    expect(screen.getByText('Pull requests (2)')).toBeInTheDocument();
+  });
+
+  it('omits the "Pull requests" button when showHosting is false', () => {
+    render(<ActionBar {...props({ showHosting: false })} />);
+    expect(screen.queryByText(/Pull requests/)).not.toBeInTheDocument();
+  });
+
+  it('calls onOpenHosting when the "Pull requests" button is clicked', async () => {
+    const p = props({ showHosting: true, hostingCount: 0 });
+    render(<ActionBar {...p} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByText('Pull requests (0)'));
+    expect(p.onOpenHosting).toHaveBeenCalledTimes(1);
   });
 });

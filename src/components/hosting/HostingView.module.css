@@ -1,0 +1,71 @@
+/* The simulated hosting web view's fake browser chrome (new behavior, no
+ * oracle equivalent — see design.md "File Changes": `HostingView`). Full-
+ * area overlay, opaque, above the canvas; `--z-hosting` keeps it below the
+ * terminal window's `--z-term` so the terminal stays usable on top of it
+ * (design's Technical Approach). */
+
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-hosting);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-canvas);
+}
+
+.chrome {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  height: 44px;
+  padding: 0 var(--space-6);
+  background: var(--surface-solid);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.dots {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.urlBar {
+  flex: 1;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font: 12px var(--font-mono);
+}
+
+.closeButton {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.closeButton:hover {
+  color: var(--text-primary);
+  background: var(--hover);
+}
+
+.body {
+  flex: 1;
+  overflow: auto;
+}

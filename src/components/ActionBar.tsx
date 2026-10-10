@@ -12,9 +12,27 @@ export interface ActionBarProps {
   onToggleReset(): void;
   onResetExample(): void;
   onResetEmpty(): void;
+  /** Gates the "Pull requests (n)" button — one of the two entry points
+   * into the simulated hosting web view (the other is the remote-box click
+   * in `GraphLayer`), both tied to origin existing, same as `showMate`. */
+  showHosting: boolean;
+  hostingCount: number;
+  onOpenHosting(): void;
 }
 
-export function ActionBar({ showMate, mateLabel, onMate, onToggleTheme, resetOpen, onToggleReset, onResetExample, onResetEmpty }: ActionBarProps) {
+export function ActionBar({
+  showMate,
+  mateLabel,
+  onMate,
+  onToggleTheme,
+  resetOpen,
+  onToggleReset,
+  onResetExample,
+  onResetEmpty,
+  showHosting,
+  hostingCount,
+  onOpenHosting,
+}: ActionBarProps) {
   return (
     <div className={styles.bar}>
       {showMate && (
@@ -26,6 +44,11 @@ export function ActionBar({ showMate, mateLabel, onMate, onToggleTheme, resetOpe
         >
           <span className={styles.mateDot} />
           {mateLabel}
+        </button>
+      )}
+      {showHosting && (
+        <button type="button" onClick={onOpenHosting} title="Ver pull requests en origin" className={styles.chip}>
+          Pull requests ({hostingCount})
         </button>
       )}
       <button type="button" onClick={onToggleTheme} aria-label="Cambiar tema" title="Cambiar tema claro/oscuro" className={`${styles.chip} ${styles.themeButton}`}>

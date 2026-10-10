@@ -1,0 +1,292 @@
+/* The PR detail pane inside the simulated hosting web view, shared by
+ * `PullRequestDetail`, `ConversationTab`, `CommitsTab`, `ChangesTab`, and
+ * `CommentForm` (new behavior, no oracle equivalent — see design.md "File
+ * Changes"). */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-7);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.backLink {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.backLink:hover {
+  color: var(--text-primary);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.badge {
+  flex-shrink: 0;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.headerBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font: 12px var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.secondaryButton {
+  height: 30px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.secondaryButton:hover {
+  background: var(--hover);
+}
+
+.actionError {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid var(--danger);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tabActive {
+  color: var(--text-primary);
+  border-bottom-color: var(--success);
+}
+
+.tabPanel {
+  flex: 1;
+}
+
+.empty {
+  padding: var(--space-7);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+}
+
+/* ConversationTab */
+.conversation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timelineItem {
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-solid);
+}
+
+.timelineText {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.commentAuthor {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.commentBody {
+  margin: var(--space-2) 0 0;
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+/* CommentForm */
+.commentForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.commentLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.commentInput {
+  min-height: 70px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-solid);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.error {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid var(--danger);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.commentSubmit {
+  align-self: flex-start;
+  height: 30px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--success);
+  color: var(--bg-canvas);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* CommitsTab */
+.commitList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.commitRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-solid);
+}
+
+.commitHash {
+  font: 12px var(--font-mono);
+  color: var(--text-muted);
+}
+
+.commitMsg {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.commitAuthor {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* ChangesTab */
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fileRow {
+  display: flex;
+  gap: var(--space-4);
+  font: 12px var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.fileType {
+  color: var(--text-muted);
+}
+
+.fileName {
+  color: var(--text-primary);
+}
+
+.diff {
+  margin: 0;
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--surface-terminal);
+  font: 12px var(--font-mono);
+  overflow-x: auto;
+  white-space: pre;
+}

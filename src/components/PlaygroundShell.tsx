@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGitPlayground } from '../app/useGitPlayground';
 import type { PersistenceDeps } from '../app/useGitPlayground';
+import { useHostingView } from '../app/useHostingView';
 import { useTerminalWindow } from '../hooks/useTerminalWindow';
 import { useCamera } from '../hooks/useCamera';
 import type { CameraEnv, CameraGraphState } from '../hooks/useCamera';
@@ -35,6 +36,7 @@ import { FileEditorModal } from './FileEditorModal';
 import { EmptyState } from './EmptyState';
 import { FlyOverlay } from './FlyOverlay';
 import { LiveRegion } from './LiveRegion';
+import { HostingView } from './hosting/HostingView';
 import { promptSegs, filesModel, stripSummary, resolverModel } from '../ui/selectors';
 import { tipData, tipPlacement } from '../ui/tooltip';
 import { layoutOf } from '../ui/layoutCache';
@@ -115,6 +117,7 @@ export function PlaygroundShell() {
   // before `playground` is created.
   const choreo = useChoreography({ rootRef, overlayRef, fxRef, termRef: termWindowRef, camera, reducedRef, toasts });
   const playground = useGitPlayground(choreo, persistenceDeps);
+  const hostingView = useHostingView();
 
   // Theme toggle (tasks.md 7.1/7.2) — `onChange` keeps `themeRef` current
   // and triggers the oracle's `toggleTheme -> save()` on demand (no repo
@@ -165,8 +168,8 @@ export function PlaygroundShell() {
   // are themselves stable (`useCallback`), so this only changes identity
   // when they actually do.
   const graphHandlers: GraphHandlers = useMemo(
-    () => ({ onHover: tooltip.hover, onUnhover: tooltip.unhover }),
-    [tooltip.hover, tooltip.unhover],
+    () => ({ onHover: tooltip.hover, onUnhover: tooltip.unhover, onRemoteBoxClick: hostingView.openView }),
+    [tooltip.hover, tooltip.unhover, hostingView.openView],
   );
   const tipId = tooltip.tip && tooltip.tip.kind === 'commit' ? tooltip.tip.id : null;
   const tip = repo && tooltip.tip ? tipData(tooltip.tip, repo) : null;
@@ -176,6 +179,25 @@ export function PlaygroundShell() {
   const resolverModelValue = resolverModel(repo);
   const hasRemote = !!repo && Object.keys(repo.remote.branches).length > 0;
   const showEmpty = !layout || layout.nodes.length === 0;
+
+  // Simulated hosting web view (tasks.md Phase 3): both entry points
+  // (ActionBar's "Pull requests (n)" button and the remote-box click wired
+  // into `graphHandlers` above) are gated on `hasRemote`, same as the
+  // teammate button — a PR needs an `origin` to exist.
+  const originBranches = repo ? Object.keys(repo.remote.branches) : [];
+  const prs = repo ? GitEngine.listPullRequests(repo) : [];
+  const hostingCount = prs.filter((pr) => pr.status === 'open').length;
+
+  // PR detail (tasks.md Phase 4): `prView` walks ancestors and diffs trees
+  // (`mergeBase`/`diffArboles`), so it's memoized on `[repo, route]` rather
+  // than recomputed on every render — `repo` only changes when a command
+  // actually applies, and `route` only changes on navigation, so this skips
+  // recomputation on unrelated re-renders (e.g. every terminal keystroke).
+  const hostingRoute = hostingView.route;
+  const activePrView = useMemo(
+    () => (repo && hostingRoute.kind === 'pr' ? GitEngine.prView(repo, hostingRoute.id) : null),
+    [repo, hostingRoute],
+  );
 
   return (
     <div ref={rootRef} className={styles.root}>
@@ -226,7 +248,29 @@ export function PlaygroundShell() {
         onToggleReset={playground.toggleResetMenu}
         onResetExample={() => playground.loadRepo(GitEngine.ejemplo(), RESET_EXAMPLE_NOTICE)}
         onResetEmpty={() => playground.loadRepo(GitEngine.vacio(), RESET_EMPTY_NOTICE)}
+        showHosting={hasRemote}
+        hostingCount={hostingCount}
+        onOpenHosting={hostingView.openView}
       />
+
+      {hostingView.open && (
+        <HostingView
+          route={hostingView.route}
+          prs={prs}
+          originBranches={originBranches}
+          prView={activePrView}
+          onClose={hostingView.closeView}
+          onGoToList={hostingView.goToList}
+          onGoToNew={hostingView.goToNew}
+          onGoToPr={hostingView.goToPr}
+          onSetTab={hostingView.setTab}
+          onCreate={playground.hosting.create}
+          onCommentPr={playground.hosting.comment}
+          onClosePr={playground.hosting.close}
+          onReopenPr={playground.hosting.reopen}
+          onMergePr={playground.hosting.merge}
+        />
+      )}
 
       <ToastStack toasts={toasts.toasts} />
 

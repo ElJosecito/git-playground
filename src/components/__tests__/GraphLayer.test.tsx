@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { createRef } from 'react';
 import { GraphLayer } from '../GraphLayer';
 import { layoutOf } from '../../ui/layoutCache';
@@ -126,6 +126,45 @@ describe('GraphLayer', () => {
     for (const l of layout.labels) {
       expect(document.querySelector(`[data-label="${l.key}"]:not([data-leaving])`)).not.toBeNull();
     }
+  });
+
+  // New behavior (design.md "File Changes": "clicking the remote box opens
+  // the view (handler added to the memoized `graphHandlers`)" — one of the
+  // two entry points into the simulated hosting web view).
+  it('calls handlers.onRemoteBoxClick when the remote box is clicked', () => {
+    const repo = GitEngine.companero(GitEngine.ejemplo()).estado;
+    const layout = layoutOf(repo);
+    const onRemoteBoxClick = vi.fn();
+    const worldRef = createRef<SVGGElement>();
+    render(
+      <GraphLayer
+        layout={layout}
+        planVersion={0}
+        tipId={null}
+        worldRef={worldRef}
+        handlers={{ onRemoteBoxClick }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Ver pull requests en origin' }));
+    expect(onRemoteBoxClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('also calls handlers.onRemoteBoxClick on Enter (keyboard activation)', () => {
+    const repo = GitEngine.companero(GitEngine.ejemplo()).estado;
+    const layout = layoutOf(repo);
+    const onRemoteBoxClick = vi.fn();
+    const worldRef = createRef<SVGGElement>();
+    render(
+      <GraphLayer
+        layout={layout}
+        planVersion={0}
+        tipId={null}
+        worldRef={worldRef}
+        handlers={{ onRemoteBoxClick }}
+      />,
+    );
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Ver pull requests en origin' }), { key: 'Enter' });
+    expect(onRemoteBoxClick).toHaveBeenCalledTimes(1);
   });
 
   it('is memoized: an identical layout object does not re-render on an unrelated parent re-render', () => {

@@ -10,6 +10,11 @@
   overflow: visible;
 }
 
+.remoteBoxGroup {
+  outline: none;
+  cursor: pointer;
+}
+
 .remoteBoxLabel {
   font: 500 12px var(--font-mono);
   fill: var(--text-secondary);
