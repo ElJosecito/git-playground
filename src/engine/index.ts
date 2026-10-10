@@ -14,6 +14,7 @@ import { short } from './util';
 import { tokens } from './tokens';
 import { completar } from './completion';
 import { PALETA, DX, DY } from './constants';
+import { createPullRequest, commentPullRequest, closePullRequest, reopenPullRequest, mergePullRequest, listPullRequests, prView } from './hosting/index';
 import type {
   CommandResult,
   CompletionResult,
@@ -26,6 +27,9 @@ import type {
 } from './types';
 import type { FilesStatus } from './files';
 import type { BranchInfo } from './info';
+import type { CreatePullRequestInput } from './hosting/create';
+import type { MergeStrategy, PullRequest } from './hosting/types';
+import type { PrView } from './hosting/view';
 
 export interface GitEngineApi {
   ejecutar(estado: RepoState, entrada: string): CommandResult;
@@ -48,6 +52,13 @@ export interface GitEngineApi {
   resolve(estado: RepoState, ref: string): Hash | null;
   tokens(linea: string): string[] | null;
   completar(estado: RepoState, linea: string): CompletionResult;
+  createPullRequest(estado: RepoState, input: CreatePullRequestInput): CommandResult;
+  commentPullRequest(estado: RepoState, id: number, body: string): CommandResult;
+  closePullRequest(estado: RepoState, id: number): CommandResult;
+  reopenPullRequest(estado: RepoState, id: number): CommandResult;
+  mergePullRequest(estado: RepoState, id: number, strategy: MergeStrategy, deleteBranch: boolean): CommandResult;
+  listPullRequests(estado: RepoState): PullRequest[];
+  prView(estado: RepoState, id: number): PrView | null;
   PALETA: string[];
   DX: number;
   DY: number;
@@ -74,6 +85,13 @@ export const GitEngine: GitEngineApi = {
   resolve,
   tokens,
   completar,
+  createPullRequest,
+  commentPullRequest,
+  closePullRequest,
+  reopenPullRequest,
+  mergePullRequest,
+  listPullRequests,
+  prView,
   PALETA,
   DX,
   DY,

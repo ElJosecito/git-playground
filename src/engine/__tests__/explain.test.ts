@@ -1,11 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { vacio, ensureColor } from '../state';
 import { explicar } from '../explain';
+import type { PullRequest } from '../hosting/types';
 import type { RepoState } from '../types';
 
 function withBranch(name = 'main'): RepoState {
   const s = vacio();
   ensureColor(s, name);
+  return s;
+}
+
+/** A state with one hosting PR seeded, for toast copy that needs to look up `source`/`target` by id. */
+function withPr(pr: Partial<PullRequest> & { id: number }): RepoState {
+  const s = withBranch();
+  s.hosting = {
+    prs: [{ title: 'PR', body: '', source: 'feature', target: 'main', status: 'open', timeline: [], ...pr }],
+    nextId: pr.id + 1,
+    clock: 0,
+  };
   return s;
 }
 
@@ -113,5 +125,53 @@ describe('explain (explicar, ported from git-engine.js)', () => {
   it('repo-init explanation', () => {
     const r = explicar([{ type: 'repo-init' }], withBranch());
     expect(r!.text).toContain('Creaste un repositorio vacío');
+  });
+
+  // Pull-request toast copy: new behavior (no oracle equivalent) — see
+  // design.md "New GitEvent variants" / "explicar() checks them right after
+  // the error check."
+  describe('hosting pull-request toasts (new behavior, no oracle equivalent)', () => {
+    it('explains pr-opened', () => {
+      const r = explicar([{ type: 'pr-opened', id: 1, source: 'feature', target: 'main' }], withBranch());
+      expect(r!.tone).toBe('success');
+      expect(r!.text).toContain('#1');
+      expect(r!.text).toContain('feature');
+      expect(r!.text).toContain('main');
+    });
+
+    it('explains pr-commented', () => {
+      const r = explicar([{ type: 'pr-commented', id: 3 }], withBranch());
+      expect(r!.text).toContain('#3');
+    });
+
+    it('explains pr-closed with a manual reason', () => {
+      const r = explicar([{ type: 'pr-closed', id: 2, reason: 'manual' }], withBranch());
+      expect(r!.text).toContain('#2');
+      expect(r!.text).not.toContain('ya no existe en origin');
+    });
+
+    it('explains pr-closed with the exact source-deleted copy from design.md', () => {
+      const r = explicar([{ type: 'pr-closed', id: 5, reason: 'source-deleted' }], withPr({ id: 5, source: 'feature', target: 'main' }));
+      expect(r!.text).toBe('El pull request #5 se cerró: la rama feature ya no existe en origin.');
+    });
+
+    it('explains pr-reopened', () => {
+      const r = explicar([{ type: 'pr-reopened', id: 4 }], withBranch());
+      expect(r!.text).toContain('#4');
+      expect(r!.tone).toBe('info');
+    });
+
+    it('explains pr-merged with the exact merge-strategy copy from design.md', () => {
+      const r = explicar([{ type: 'pr-merged', id: 7, strategy: 'squash', target: 'main', hash: 'h1', branchDeleted: false }], withBranch());
+      expect(r!.text).toBe('Fusionaste el pull request #7 en `origin/main`. Tu repositorio aún no lo sabe: usa `git pull`.');
+      expect(r!.tone).toBe('success');
+    });
+
+    it('explains an auto-merge (strategy "external") distinctly from a manual merge', () => {
+      const manual = explicar([{ type: 'pr-merged', id: 8, strategy: 'merge', target: 'main', hash: 'h2', branchDeleted: false }], withBranch());
+      const auto = explicar([{ type: 'pr-merged', id: 8, strategy: 'external', target: 'main', hash: 'h2', branchDeleted: false }], withBranch());
+      expect(auto!.text).not.toBe(manual!.text);
+      expect(auto!.text).toContain('#8');
+    });
   });
 });

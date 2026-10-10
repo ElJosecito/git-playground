@@ -16,6 +16,7 @@ import { tokens } from './tokens';
 import { GIT } from './commands/index';
 import { assertKnownGitSubcommand } from './commands/unsupported';
 import { SHELL, shell } from './commands/shell';
+import { syncHosting } from './hosting/sync';
 import type { CommandResult, RepoState } from './types';
 
 /** Wraps a pure state-mutating function with the standard snapshot/diff/error envelope. */
@@ -28,6 +29,7 @@ export function envolver(estado: RepoState, fn: (s: RepoState, r: ReturnType<typ
     if (e instanceof GitError) return { estado, salida: e.lines, eventos: [{ type: 'error' }], error: true };
     throw e;
   }
+  syncHosting(s, r);
   diffEventos(estado, s, r);
   return { estado: s, salida: r.salida, eventos: r.eventos, error: false };
 }
@@ -114,6 +116,7 @@ export function ejecutar(estado: RepoState, entrada: string): CommandResult {
     console.error(e);
     return { estado, salida: [C('e', 'Error interno del simulador: ' + (e as Error).message), M('Tu repositorio no ha cambiado.')], eventos: [{ type: 'error' }], error: true };
   }
+  syncHosting(s, r);
   diffEventos(estado, s, r);
   return { estado: s, salida: r.salida, eventos: r.eventos, accion: r.accion, error: false };
 }

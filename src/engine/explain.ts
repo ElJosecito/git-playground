@@ -3,6 +3,7 @@
 // priority order — the first matching branch wins.
 import { pl, short } from './util';
 import { curName } from './refs';
+import { hostingOf } from './hosting/state';
 import type { ExplainResult, GitEvent, RepoState } from './types';
 
 const code = (x: string): string => '`' + x + '`';
@@ -17,6 +18,43 @@ export function explicar(E: GitEvent[], s: RepoState): ExplainResult | null {
   const n = orf ? orf.hashes.length : 0;
 
   if (find(E, 'error')) return null;
+
+  // Pull-request toasts: new behavior (no oracle equivalent) — see
+  // design.md "New GitEvent variants": "explicar() checks them right after
+  // the error check." The PR's own record (looked up by id) supplies the
+  // source/target branch names some of these texts need.
+  const prOpened = find(E, 'pr-opened');
+  if (prOpened) return { icon: '⇄', tone: 'success', text: `Abriste el pull request #${prOpened.id}: ${code(prOpened.source)} → ${code(prOpened.target)}.` };
+
+  const prCommented = find(E, 'pr-commented');
+  if (prCommented) return { icon: '💬', tone: 'info', text: `Comentaste en el pull request #${prCommented.id}.` };
+
+  const prClosed = find(E, 'pr-closed');
+  if (prClosed) {
+    const pr = hostingOf(s).prs.find((p) => p.id === prClosed.id);
+    if (prClosed.reason === 'manual') return { icon: '−', tone: 'info', text: `Cerraste el pull request #${prClosed.id}.` };
+    const branch = prClosed.reason === 'source-deleted' ? pr?.source : pr?.target;
+    return { icon: '−', tone: 'warning', text: `El pull request #${prClosed.id} se cerró: la rama ${branch ?? ''} ya no existe en origin.` };
+  }
+
+  const prReopened = find(E, 'pr-reopened');
+  if (prReopened) return { icon: '⇄', tone: 'info', text: `Reabriste el pull request #${prReopened.id}.` };
+
+  const prMerged = find(E, 'pr-merged');
+  if (prMerged) {
+    if (prMerged.strategy === 'external') {
+      return {
+        icon: '⑂',
+        tone: 'success',
+        text: `El pull request #${prMerged.id} ya está fusionado: sus cambios llegaron a ${code('origin/' + prMerged.target)} por otro camino.`,
+      };
+    }
+    return {
+      icon: '⑂',
+      tone: 'success',
+      text: `Fusionaste el pull request #${prMerged.id} en ${code('origin/' + prMerged.target)}. Tu repositorio aún no lo sabe: usa ${code('git pull')}.`,
+    };
+  }
 
   const conflict = find(E, 'merge-conflict');
   if (conflict) {

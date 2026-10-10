@@ -3,6 +3,12 @@
 // "Interfaces / Contracts" for the source of truth. These types intentionally
 // keep the oracle's Spanish field names where the oracle itself used them,
 // so the port can be diffed against the original line by line (design D3).
+//
+// `hosting` is new behavior (no oracle equivalent) added by the simulated
+// hosting feature. It is OPTIONAL and absent by default — see
+// `hosting/state.ts` and design.md's "Field shape" decision — so the golden
+// parity and exact-shape tests stay unmodified.
+import type { CloseReason, HostingState, MergeStrategy } from './hosting/types';
 
 export type Hash = string;
 export type Tree = Record<string, string>;
@@ -103,6 +109,7 @@ export interface RepoState {
   op: OpState | null;
   seq: number;
   tm: number;
+  hosting?: HostingState;
 }
 
 /** One variant per event type emitted by `ejecutar`/diffEventos; payloads match the oracle exactly. */
@@ -146,7 +153,12 @@ export type GitEvent =
   | { type: 'head-detached'; to: Hash | null }
   | { type: 'ref-moved'; kind: 'branch' | 'tag' | 'track'; ref: string; from: Hash | null; to: Hash | null }
   | { type: 'commits-orphaned'; hashes: Hash[] }
-  | { type: 'commits-restored'; hashes: Hash[] };
+  | { type: 'commits-restored'; hashes: Hash[] }
+  | { type: 'pr-opened'; id: number; source: string; target: string }
+  | { type: 'pr-commented'; id: number }
+  | { type: 'pr-closed'; id: number; reason: CloseReason }
+  | { type: 'pr-reopened'; id: number }
+  | { type: 'pr-merged'; id: number; strategy: MergeStrategy | 'external'; target: string; hash: Hash | null; branchDeleted: boolean };
 
 export interface CommandResult {
   estado: RepoState;
