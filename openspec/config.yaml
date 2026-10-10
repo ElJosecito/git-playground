@@ -1,0 +1,57 @@
+schema: spec-driven
+
+context: |
+  Tech stack (planned, not yet scaffolded): Vite + React + TypeScript.
+  Testing (planned): Vitest + React Testing Library.
+  Styling (planned): CSS Modules with CSS custom-property design tokens.
+  Source material: design-handoff/ (Claude Design export) — git-engine.js is a
+  pure-JS git simulation engine; support.js is the dc-runtime renderer;
+  "Git Playground.dc.html" is the DSL template to port into React components.
+  Greenfield repo, no commits yet, no package.json yet.
+
+strict_tdd: true
+
+testing:
+  test_command: "npm test"
+  test_runner: vitest
+  framework: "vitest run"
+  layers:
+    unit: vitest
+    integration: "vitest + @testing-library/react"
+    e2e: none
+  coverage:
+    available: false
+    command: "vitest run --coverage"
+  quality:
+    linter: "planned — not yet configured (recommend eslint)"
+    type_checker: "planned — tsc (TypeScript strict mode recommended)"
+    formatter: "planned — not yet configured (recommend prettier)"
+  status: planned-not-scaffolded
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Treat design-handoff/git-engine.js and support.js as the behavioral source of truth to port, not to rewrite from scratch
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Specs are written in English even though UI copy in the source export is in Spanish
+  design:
+    - Document how the dc-runtime DSL template maps to React components/hooks
+    - Document architecture decisions with rationale
+    - Define the CSS custom-property token set up front (colors, spacing, motion) before component styling
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - First task group MUST scaffold Vite + React + TypeScript + Vitest before any porting work
+  apply:
+    - Follow existing code patterns once scaffolded
+    - Port git-engine.js logic with tests before wiring UI (engine has no DOM dependency)
+    tdd: true
+    test_command: "npm test"
+  verify:
+    test_command: "npm test"
+    build_command: "npm run build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
