@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Git Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap">
+<script src="git-engine.js"></script>
+<style>
+:root{--bg-canvas:#0B0D12;--bg-grid-dot:#1C212B;--surface:rgba(22,25,33,0.82);--surface-solid:#161921;--surface-terminal:#14161C;--border:rgba(255,255,255,0.08);--border-strong:rgba(255,255,255,0.16);--text-primary:#E8EAF0;--text-secondary:#9AA1B2;--text-muted:#5F6678;--head:#FFFFFF;--head-ink:#0B0D12;--success:#4ADE80;--warning:#FBBF24;--danger:#F87171;--ghost:rgba(154,161,178,0.25);--t-green:#4ADE80;--t-red:#F87171;--t-yellow:#FBBF24;--t-cyan:#67E8F9;--remote-fill:rgba(255,255,255,0.015);--hover:rgba(255,255,255,0.06);--shadow:0 20px 50px rgba(0,0,0,0.45),0 0 0 1px var(--border);--dur-fast:150ms;--dur-base:280ms;--dur-slow:450ms;--dur-camera:700ms;--ease-out:cubic-bezier(0.22,1,0.36,1);--ease-in-out:cubic-bezier(0.65,0,0.35,1)}
+:root[data-theme="light"]{--bg-canvas:#F5F6F8;--bg-grid-dot:#D5D9E1;--surface:rgba(255,255,255,0.86);--surface-solid:#FFFFFF;--surface-terminal:#FFFFFF;--border:rgba(15,20,30,0.09);--border-strong:rgba(15,20,30,0.2);--text-primary:#14171F;--text-secondary:#4E5566;--text-muted:#7F8696;--head:#14171F;--head-ink:#FFFFFF;--success:#15803D;--warning:#B45309;--danger:#DC2626;--t-green:#15803D;--t-red:#DC2626;--t-yellow:#A16207;--t-cyan:#0E7490;--remote-fill:rgba(15,20,30,0.02);--hover:rgba(15,20,30,0.05);--shadow:0 20px 50px rgba(20,25,40,0.14),0 0 0 1px var(--border)}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg-canvas);color:var(--text-primary);font-family:Geist,system-ui,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+a{color:var(--text-primary)}a:hover{color:var(--text-secondary)}
+input::placeholder,textarea::placeholder{color:var(--text-muted)}
+button{font-family:inherit}
+*::-webkit-scrollbar{width:8px;height:8px}*::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:8px}*::-webkit-scrollbar-track{background:transparent}
+</style>
+</helmet>
+<div style="position:fixed; inset:0; overflow:hidden; background:var(--bg-canvas); color:var(--text-primary); font-family:Geist,system-ui,sans-serif; font-size:14px;">
+
+  <div ref="{{ canvasRef }}" onPointerDown="{{ canvasDown }}" style="position:absolute; inset:0; touch-action:none; cursor:grab; background-image:radial-gradient(var(--bg-grid-dot) 1.1px, transparent 1.4px); background-size:24px 24px;">{{ graphEl }}</div>
+
+  <sc-if value="{{ showEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); text-align:center; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; max-width:360px; padding:0 24px;">
+      <div style="width:28px; height:28px; border-radius:50%; border:2px dashed var(--text-muted);"></div>
+      <div style="font-size:15px; font-weight:500; color:var(--text-primary);">{{ emptyTitle }}</div>
+      <div style="font-size:13px; color:var(--text-secondary); text-wrap:pretty; line-height:1.5;">{{ emptyText }}</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ stripVisible }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; left:16px; top:16px; z-index:20; max-width:calc(100% - 32px); width:{{ stripW }}; background:var(--surface); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-radius:14px; box-shadow:var(--shadow);">
+      <div onClick="{{ toggleStrip }}" style="display:flex; align-items:center; gap:8px; padding:10px 12px; cursor:pointer; user-select:none;">
+        <div style="font-size:12px; font-weight:600; color:var(--text-primary);">Archivos</div>
+        <div style="font:12px 'Geist Mono',monospace; color:var(--text-muted); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ stripSummary }}</div>
+        <div style="font-size:11px; color:var(--text-muted); transform:{{ chevron }}; transition:transform 280ms cubic-bezier(0.22,1,0.36,1);">▾</div>
+      </div>
+      <sc-if value="{{ stripOpen }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr) 14px minmax(0,1fr); gap:4px; padding:0 10px 12px; align-items:start; max-height:{{ stripMaxH }}; overflow-y:auto;">
+          <div data-zone="w" style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+            <div title="Los archivos de tu carpeta, tal como están ahora" style="font-size:11px; font-weight:500; color:var(--text-secondary); padding:0 4px 4px;">Working directory</div>
+            <sc-for list="{{ wd }}" as="f" hint-placeholder-count="1">
+              <div data-chip="w:{{ f.name }}" title="{{ f.title }}" style="display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:6px; background:{{ f.bg }}; min-width:0;">
+                <div style="width:6px; height:6px; border-radius:50%; background:{{ f.dot }}; flex-shrink:0;"></div>
+                <div style="font:12px 'Geist Mono',monospace; color:{{ f.color }}; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:{{ f.deco }};">{{ f.name }}</div>
+                <div style="font:600 10px 'Geist Mono',monospace; color:{{ f.dot }};">{{ f.letter }}</div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ wdEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px; color:var(--text-muted); padding:2px 6px;">vacío</div></sc-if>
+          </div>
+          <div style="color:var(--text-muted); font-size:11px; padding-top:1px; text-align:center;">→</div>
+          <div data-zone="s" style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+            <div title="Lo que entrará en el próximo commit" style="font-size:11px; font-weight:500; color:var(--text-secondary); padding:0 4px 4px;">Staging</div>
+            <sc-for list="{{ stg }}" as="f" hint-placeholder-count="0">
+              <div data-chip="s:{{ f.name }}" title="{{ f.title }}" style="display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:6px; background:rgba(74,222,128,0.08); min-width:0;">
+                <div style="width:6px; height:6px; border-radius:50%; background:var(--success); flex-shrink:0;"></div>
+                <div style="font:12px 'Geist Mono',monospace; color:var(--text-primary); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:{{ f.deco }};">{{ f.name }}</div>
+                <div style="font:600 10px 'Geist Mono',monospace; color:var(--success);">{{ f.letter }}</div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ stgEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:11px; color:var(--text-muted); padding:2px 6px;">vacío</div></sc-if>
+          </div>
+          <div style="color:var(--text-muted); font-size:11px; padding-top:1px; text-align:center;">→</div>
+          <div data-zone="c" style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+            <div data-chip="c:__head" title="Los archivos guardados en el commit al que apunta HEAD" style="font-size:11px; font-weight:500; color:var(--text-secondary); padding:0 4px 4px; display:flex; flex-wrap:wrap; column-gap:6px; row-gap:0;"><span>Último commit</span><span style="font-family:'Geist Mono',monospace; color:var(--t-yellow);">{{ headShort }}</span></div>
+            <sc-for list="{{ cm }}" as="f" hint-placeholder-count="1">
+              <div data-chip="c:{{ f.name }}" style="display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:6px; min-width:0;">
+                <div style="width:6px; height:6px; border-radius:50%; border:1px solid var(--text-muted); flex-shrink:0; box-sizing:border-box;"></div>
+                <div style="font:12px 'Geist Mono',monospace; color:var(--text-secondary); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ f.name }}</div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ cmEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px; color:var(--text-muted); padding:2px 6px;">{{ cmEmptyText }}</div></sc-if>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+  <sc-if value="{{ stripButton }}" hint-placeholder-val="{{ false }}">
+    <button onClick="{{ toggleStripMobile }}" style="position:absolute; left:12px; top:12px; z-index:20; height:36px; padding:0 12px; border-radius:10px; border:none; background:var(--surface); backdrop-filter:blur(20px); box-shadow:var(--shadow); color:var(--text-primary); font-size:13px; font-weight:500; display:flex; gap:8px; align-items:center;">Archivos <span style="font-family:'Geist Mono',monospace; color:var(--text-muted); font-size:12px;">{{ stripCount }}</span></button>
+  </sc-if>
+
+  <div style="position:absolute; right:16px; top:16px; z-index:25; display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end; max-width:calc(100% - 140px);">
+    <sc-if value="{{ showMate }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ mate }}" title="Añade un commit de otra persona en origin para practicar fetch y pull" style="height:32px; padding:0 12px; border-radius:10px; border:none; background:var(--surface); backdrop-filter:blur(20px); box-shadow:var(--shadow); color:var(--text-secondary); font-size:12px; font-weight:500; cursor:pointer; display:flex; gap:6px; align-items:center;" style-hover="color:var(--text-primary)"><span style="width:6px; height:6px; border-radius:50%; border:1.5px dashed var(--text-secondary);"></span>{{ mateLabel }}</button>
+    </sc-if>
+    <button onClick="{{ toggleTheme }}" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro" style="width:32px; height:32px; border-radius:10px; border:none; background:var(--surface); backdrop-filter:blur(20px); box-shadow:var(--shadow); color:var(--text-secondary); font-size:14px; cursor:pointer;" style-hover="color:var(--text-primary)">◐</button>
+    <div style="position:relative;">
+      <button onClick="{{ toggleReset }}" style="height:32px; padding:0 12px; border-radius:10px; border:none; background:var(--surface); backdrop-filter:blur(20px); box-shadow:var(--shadow); color:var(--text-secondary); font-size:12px; font-weight:500; cursor:pointer;" style-hover="color:var(--text-primary)">Reiniciar repositorio</button>
+      <sc-if value="{{ resetOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; right:0; top:40px; width:260px; padding:14px; border-radius:14px; background:var(--surface); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); box-shadow:var(--shadow); display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:13px; font-weight:600;">¿Empezar de nuevo?</div>
+          <div style="font-size:12px; color:var(--text-secondary); line-height:1.45;">Se perderá el estado actual del repositorio.</div>
+          <button onClick="{{ resetExample }}" style="text-align:left; padding:8px 10px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text-primary); cursor:pointer; display:flex; flex-direction:column; gap:2px;" style-hover="background:var(--hover)"><span style="font-size:13px; font-weight:500;">Repositorio de ejemplo</span><span style="font-size:11px; color:var(--text-muted);">README.md y dos commits en main</span></button>
+          <button onClick="{{ resetEmpty }}" style="text-align:left; padding:8px 10px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text-primary); cursor:pointer; display:flex; flex-direction:column; gap:2px;" style-hover="background:var(--hover)"><span style="font-size:13px; font-weight:500;">Carpeta vacía</span><span style="font-size:11px; color:var(--text-muted);">Sin git init: empiezas desde cero</span></button>
+          <button onClick="{{ toggleReset }}" style="padding:6px; border:none; background:transparent; color:var(--text-muted); font-size:12px; cursor:pointer;">Cancelar</button>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="position:absolute; left:50%; top:16px; transform:translateX(-50%); z-index:40; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; width:min(460px, calc(100% - 32px));">
+    <sc-for list="{{ toasts }}" as="t" hint-placeholder-count="0">
+      <div style="display:flex; gap:10px; align-items:flex-start; padding:10px 14px; border-radius:14px; background:var(--surface); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); box-shadow:var(--shadow); opacity:{{ t.op }}; transform:{{ t.tf }}; transition:opacity 280ms cubic-bezier(0.22,1,0.36,1), transform 280ms cubic-bezier(0.22,1,0.36,1); max-width:100%;">
+        <div style="width:20px; height:20px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font:600 12px 'Geist Mono',monospace; color:{{ t.ic }}; box-shadow:inset 0 0 0 1.5px {{ t.ic }};">{{ t.icon }}</div>
+        <div style="font-size:13px; line-height:1.45; color:var(--text-primary); text-wrap:pretty; padding-top:1px;"><sc-for list="{{ t.segs }}" as="sg"><span style="font-family:{{ sg.ff }}; color:{{ sg.c }}; font-size:{{ sg.fs }};">{{ sg.t }}</span></sc-for></div>
+      </div>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ tipOn }}" hint-placeholder-val="{{ false }}">
+    <div role="tooltip" style="position:absolute; left:{{ tipX }}; top:{{ tipY }}; transform:{{ tipTf }}; z-index:50; pointer-events:none; max-width:260px; width:max-content; padding:10px 12px; border-radius:10px; background:var(--surface); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px;">
+      <div style="position:absolute; left:{{ tipArrowX }}; top:{{ tipArrowY }}; width:10px; height:10px; margin-left:-5px; transform:rotate(45deg); background:var(--surface-solid); box-shadow:{{ tipArrowShadow }};"></div>
+      <div style="display:flex; gap:8px; align-items:baseline;">
+        <div style="font-size:13px; font-weight:600; color:{{ tip.titleColor }};">{{ tip.title }}</div>
+        <div style="font:12px 'Geist Mono',monospace; color:var(--t-yellow);">{{ tip.hash }}</div>
+      </div>
+      <sc-if value="{{ tip.hasMsg }}"><div style="font-size:13px; color:var(--text-primary); line-height:1.4; text-wrap:pretty;">{{ tip.msg }}</div></sc-if>
+      <div style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:3px 10px; font-size:12px;">
+        <sc-for list="{{ tip.rows }}" as="row"><div style="color:var(--text-muted);">{{ row.k }}</div><div style="color:var(--text-secondary); font-family:{{ row.ff }}; overflow-wrap:anywhere;">{{ row.v }}</div></sc-for>
+      </div>
+      <sc-if value="{{ tip.hasNote }}"><div style="font-size:12px; color:var(--text-muted); line-height:1.4; text-wrap:pretty;">{{ tip.note }}</div></sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ resolverOn }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; right:16px; top:60px; z-index:35; width:min(420px, calc(100% - 32px)); max-height:calc(100% - 140px); overflow:auto; padding:14px; border-radius:14px; background:var(--surface); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); box-shadow:0 20px 50px rgba(0,0,0,0.45), 0 0 0 1px rgba(248,113,113,0.35); display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div style="width:8px; height:8px; border-radius:50%; background:var(--danger);"></div>
+        <div style="font-size:13px; font-weight:600; flex:1;">{{ resolverTitle }}</div>
+        <button onClick="{{ hideResolver }}" aria-label="Ocultar" style="border:none; background:transparent; color:var(--text-muted); cursor:pointer; font-size:12px;">Ocultar</button>
+      </div>
+      <sc-for list="{{ conflicts }}" as="cf" hint-placeholder-count="1">
+        <div style="display:flex; flex-direction:column; gap:8px; padding-top:4px;">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div style="font:500 12px 'Geist Mono',monospace; color:var(--danger); flex:1;">{{ cf.file }}</div>
+            <div style="font-size:11px; color:{{ cf.stateColor }};">{{ cf.state }}</div>
+          </div>
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px;">
+            <div style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+              <div style="font-size:11px; color:var(--text-secondary);">La mía <span style="font-family:'Geist Mono',monospace; color:var(--text-muted);">HEAD</span></div>
+              <div style="font:12px/1.5 'Geist Mono',monospace; white-space:pre-wrap; word-break:break-word; padding:8px; border-radius:6px; background:var(--surface-terminal); box-shadow:inset 0 0 0 1px var(--border); max-height:120px; overflow:auto; color:var(--text-primary);">{{ cf.ours }}</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+              <div style="font-size:11px; color:var(--text-secondary);">La suya <span style="font-family:'Geist Mono',monospace; color:var(--text-muted);">{{ cf.theirsName }}</span></div>
+              <div style="font:12px/1.5 'Geist Mono',monospace; white-space:pre-wrap; word-break:break-word; padding:8px; border-radius:6px; background:var(--surface-terminal); box-shadow:inset 0 0 0 1px var(--border); max-height:120px; overflow:auto; color:var(--text-primary);">{{ cf.theirs }}</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button onClick="{{ cf.mine }}" style="height:28px; padding:0 10px; border-radius:6px; border:1px solid var(--border-strong); background:transparent; color:var(--text-primary); font-size:12px; cursor:pointer;" style-hover="background:var(--hover)">Mantener la mía</button>
+            <button onClick="{{ cf.their }}" style="height:28px; padding:0 10px; border-radius:6px; border:1px solid var(--border-strong); background:transparent; color:var(--text-primary); font-size:12px; cursor:pointer;" style-hover="background:var(--hover)">Mantener la suya</button>
+            <button onClick="{{ cf.both }}" style="height:28px; padding:0 10px; border-radius:6px; border:1px solid var(--border-strong); background:transparent; color:var(--text-primary); font-size:12px; cursor:pointer;" style-hover="background:var(--hover)">Mantener ambas</button>
+            <button onClick="{{ cf.edit }}" style="height:28px; padding:0 10px; border-radius:6px; border:none; background:transparent; color:var(--text-secondary); font-size:12px; cursor:pointer;" style-hover="color:var(--text-primary)">Editar…</button>
+          </div>
+        </div>
+      </sc-for>
+      <div style="font-size:12px; color:var(--text-secondary); line-height:1.5; border-top:1px solid var(--border); padding-top:10px;"><sc-for list="{{ resolverHint }}" as="sg"><span style="font-family:{{ sg.ff }}; color:{{ sg.c }};">{{ sg.t }}</span></sc-for></div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ resolverPill }}" hint-placeholder-val="{{ false }}">
+    <button onClick="{{ showResolver }}" style="position:absolute; right:16px; top:60px; z-index:35; height:32px; padding:0 12px; border-radius:10px; border:none; background:var(--surface); backdrop-filter:blur(20px); box-shadow:0 0 0 1px rgba(248,113,113,0.45); color:var(--danger); font-size:12px; font-weight:500; cursor:pointer;">Conflicto · abrir resolvedor</button>
+  </sc-if>
+
+  <sc-if value="{{ editorOn }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; top:14%; transform:translateX(-50%); z-index:45; width:min(520px, calc(100% - 32px)); border-radius:14px; background:var(--surface-terminal); box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid var(--border);">
+        <div style="font-size:12px; color:var(--text-secondary);">Editando</div>
+        <div style="font:500 12px 'Geist Mono',monospace; color:var(--text-primary); flex:1;">{{ editorFile }}</div>
+        <div style="font-size:11px; color:var(--text-muted);">Ctrl+Enter guarda · Esc cancela</div>
+      </div>
+      <textarea ref="{{ editorRef }}" value="{{ editorText }}" onChange="{{ editorChange }}" onKeyDown="{{ editorKey }}" spellcheck="false" style="min-height:200px; resize:vertical; border:none; outline:none; padding:12px 14px; background:transparent; color:var(--text-primary); font:13px/1.55 'Geist Mono',monospace;"></textarea>
+      <div style="display:flex; gap:8px; justify-content:flex-end; padding:10px 14px; border-top:1px solid var(--border);">
+        <button onClick="{{ editorCancel }}" style="height:30px; padding:0 12px; border-radius:6px; border:none; background:transparent; color:var(--text-secondary); font-size:12px; cursor:pointer;">Cancelar</button>
+        <button onClick="{{ editorSave }}" style="height:30px; padding:0 14px; border-radius:6px; border:none; background:var(--text-primary); color:var(--bg-canvas); font-size:12px; font-weight:600; cursor:pointer;">Guardar</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="position:absolute; right:16px; bottom:{{ camBottom }}; z-index:25; display:flex; gap:2px; padding:3px; border-radius:10px; background:var(--surface); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); box-shadow:var(--shadow);">
+    <button onClick="{{ zoomOut }}" aria-label="Alejar" title="Alejar" style="width:30px; height:28px; border:none; border-radius:7px; background:transparent; color:var(--text-secondary); font-size:15px; cursor:pointer;" style-hover="background:var(--hover); color:var(--text-primary)">−</button>
+    <button onClick="{{ zoomIn }}" aria-label="Acercar" title="Acercar" style="width:30px; height:28px; border:none; border-radius:7px; background:transparent; color:var(--text-secondary); font-size:15px; cursor:pointer;" style-hover="background:var(--hover); color:var(--text-primary)">+</button>
+    <button onClick="{{ fitBtn }}" title="Encuadrar todo" style="height:28px; padding:0 9px; border:none; border-radius:7px; background:transparent; color:var(--text-secondary); font-size:12px; cursor:pointer;" style-hover="background:var(--hover); color:var(--text-primary)">Encuadrar</button>
+    <button onClick="{{ headBtn }}" title="Centrar en HEAD" style="height:28px; padding:0 9px; border:none; border-radius:7px; background:transparent; color:var(--text-secondary); font:500 11px 'Geist Mono',monospace; cursor:pointer;" style-hover="background:var(--hover); color:var(--text-primary)">HEAD</button>
+  </div>
+
+  <div ref="{{ termRef }}" role="region" aria-label="Terminal" style="position:absolute; left:{{ tLeft }}; top:{{ tTop }}; width:{{ tW }}; height:{{ tH }}; z-index:30; display:flex; flex-direction:column; background:var(--surface-terminal); border-radius:{{ tRadius }}; box-shadow:var(--shadow); overflow:hidden; transition:{{ tTransition }};">
+    <div onPointerDown="{{ termDragStart }}" onDoubleClick="{{ toggleMax }}" style="height:36px; flex-shrink:0; display:flex; align-items:center; position:relative; cursor:{{ dragCursor }}; user-select:none; border-bottom:1px solid var(--border);">
+      <div style="display:flex; gap:8px; padding-left:14px; position:relative; z-index:1;">
+        <button onClick="{{ minimize }}" aria-label="Minimizar terminal" style="width:12px; height:12px; border-radius:50%; background:#FF5F57; border:none; padding:0; cursor:pointer;"></button>
+        <button onClick="{{ minimize }}" aria-label="Minimizar terminal" style="width:12px; height:12px; border-radius:50%; background:#FEBC2E; border:none; padding:0; cursor:pointer;"></button>
+        <button onClick="{{ toggleMax }}" aria-label="Ampliar terminal" style="width:12px; height:12px; border-radius:50%; background:#28C840; border:none; padding:0; cursor:pointer;"></button>
+      </div>
+      <div style="position:absolute; left:0; right:0; text-align:center; font-size:12px; font-weight:500; color:var(--text-secondary); pointer-events:none;">repo — git playground</div>
+    </div>
+    <sc-if value="{{ termOpen }}" hint-placeholder-val="{{ true }}">
+      <div ref="{{ outRef }}" onClick="{{ focusInput }}" style="flex:1; overflow:auto; padding:10px 14px 12px; font:13px/1.55 'Geist Mono',monospace; word-break:break-word; tab-size:4; cursor:text;">
+        <sc-for list="{{ lines }}" as="ln" hint-placeholder-count="2">
+          <div style="min-height:1.55em; white-space:pre-wrap; tab-size:4;"><sc-for list="{{ ln.segs }}" as="sg"><span style="color:{{ sg.c }}; font-weight:{{ sg.fw }};">{{ sg.t }}</span></sc-for></div>
+        </sc-for>
+        <div style="display:flex; align-items:baseline;">
+          <sc-for list="{{ promptSegs }}" as="sg"><span style="color:{{ sg.c }}; white-space:pre;">{{ sg.t }}</span></sc-for>
+          <input ref="{{ inputRef }}" value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" placeholder="Escribe un comando… prueba git status" aria-label="Comando" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1; min-width:60px; border:none; outline:none; background:transparent; color:var(--text-primary); font:13px/1.55 'Geist Mono',monospace; padding:0; caret-color:var(--text-primary);">
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ resizable }}" hint-placeholder-val="{{ true }}">
+      <div onPointerDown="{{ termResizeStart }}" aria-hidden="true" style="position:absolute; right:0; bottom:0; width:16px; height:16px; cursor:nwse-resize; background:linear-gradient(135deg, transparent 55%, var(--border-strong) 55%, var(--border-strong) 62%, transparent 62%, transparent 72%, var(--border-strong) 72%, var(--border-strong) 79%, transparent 79%);"></div>
+    </sc-if>
+  </div>
+
+  <div ref="{{ overlayRef }}" style="position:fixed; inset:0; pointer-events:none; z-index:60;"></div>
+  <div aria-live="polite" style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);">{{ live }}</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const KEY='gitpg:v1';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const easeIO=p=>p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+const WIDE=['merge-commit','merge-conflict','rebase-done','cherry-picked','push-sent','fetch-received','pull-done','reverted'];
+const TONE={success:'var(--success)',info:'var(--text-secondary)',warning:'var(--warning)',danger:'var(--danger)'};
+function lighten(hex,amt){const n=parseInt(hex.slice(1),16);let r=n>>16,g=(n>>8)&255,b=n&255;r=Math.round(r+(255-r)*amt);g=Math.round(g+(255-g)*amt);b=Math.round(b+(255-b)*amt);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
+function segColor(k){if(k.startsWith('c:'))return k.slice(2);return {g:'var(--t-green)',r:'var(--t-red)',y:'var(--t-yellow)',w:'var(--warning)',e:'var(--danger)',m:'var(--text-muted)',h:'var(--t-cyan)',cy:'var(--t-cyan)',bold:'var(--text-primary)'}[k]||'var(--text-primary)';}
+function parseLine(str){const segs=[];const re=/\x01([^\x02]*)\x02([^\x03]*)\x03/g;let m,last=0;
+  while((m=re.exec(str))){if(m.index>last)segs.push({t:str.slice(last,m.index),c:'var(--text-primary)',fw:400});segs.push({t:m[2],c:segColor(m[1]),fw:m[1]==='bold'?600:400});last=re.lastIndex;}
+  if(last<str.length)segs.push({t:str.slice(last),c:'var(--text-primary)',fw:400});if(!segs.length)segs.push({t:' ',c:'inherit',fw:400});return segs;}
+function codeSegs(text,color){return text.split('`').map((t,i)=>i%2?{t,ff:"'Geist Mono',monospace",c:'var(--text-primary)',fs:'12px'}:{t,ff:'inherit',c:color||'inherit',fs:'inherit'});}
+
+class Component extends DCLogic {
+  state={repo:null,lines:[],input:'',toasts:[],tip:null,term:null,termMin:false,termMax:false,stripOpen:true,stripMobile:false,theme:'dark',editor:null,resetOpen:false,mobile:false,resolverHidden:false,live:'',gv:0};
+  canvasRef=React.createRef();worldRef=React.createRef();termRef=React.createRef();inputRef=React.createRef();overlayRef=React.createRef();outRef=React.createRef();editorRef=React.createRef();
+  cam={x:0,y:0,k:1};hist=[];histIdx=-1;plan=null;timers=[];lastManual=0;ptrs=new Map();lineId=0;toastId=0;
+
+  componentDidMount(){
+    this.reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const boot=()=>{if(!window.GitEngine){setTimeout(boot,30);return;}this.GE=window.GitEngine;let saved=null;try{saved=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){}
+      const repo=saved&&saved.repo&&saved.repo.v===1?saved.repo:this.GE.ejemplo();const theme=(saved&&saved.theme)||'dark';this.hist=(saved&&saved.hist)||[];
+      document.documentElement.dataset.theme=theme;
+      this.repo=repo;this.setState({repo,theme,lines:this.welcome()},()=>{this.onResize();});};
+    boot();
+    this.onResize=()=>{const r=this.canvasRef.current?this.canvasRef.current.getBoundingClientRect():null;const W=r&&r.width?r.width:innerWidth,H=r&&r.height?r.height:innerHeight;if(!W||!H)return;
+      const first=!this.sized;this.sized=true;
+      this.setState(s=>({vw:W,vh:H,mobile:W<720,term:!s.term||first?{x:16,y:Math.max(80,H-376),w:Math.min(580,W-32),h:Math.min(360,H-100)}:{...s.term,w:Math.min(s.term.w,W-16),x:clamp(s.term.x,0,Math.max(0,W-120)),y:clamp(s.term.y,0,Math.max(0,H-60))}}),()=>{if(first&&this.state.repo)this.fitAll(0);});};
+    addEventListener('resize',this.onResize);
+    if(window.ResizeObserver&&this.canvasRef.current){this.ro=new ResizeObserver(()=>this.onResize());this.ro.observe(this.canvasRef.current);}
+    this.onWheel=e=>{e.preventDefault();const r=this.canvasRef.current.getBoundingClientRect();const f=Math.exp(-e.deltaY*(e.ctrlKey?0.012:0.0016));this.zoomAt(e.clientX-r.left,e.clientY-r.top,f);this.manual();};
+    this.canvasRef.current&&this.canvasRef.current.addEventListener('wheel',this.onWheel,{passive:false});
+    this.onDocKey=e=>{if(e.key==='Escape'){if(this.state.editor)this.setState({editor:null});else if(this.state.resetOpen)this.setState({resetOpen:false});}};
+    addEventListener('keydown',this.onDocKey);
+    this.onDocDown=e=>{if(this.state.tip&&this.state.tip.touch&&!e.target.closest('[data-h],[data-label]'))this.setState({tip:null});};
+    addEventListener('pointerdown',this.onDocDown);
+    window.GitPlayground={estado:()=>this.state.repo,ejecutar:c=>this.run(c),motor:()=>this.GE,cargar:(estado)=>this.loadRepo(estado)};
+  }
+  componentWillUnmount(){this.ro&&this.ro.disconnect();removeEventListener('resize',this.onResize);removeEventListener('keydown',this.onDocKey);removeEventListener('pointerdown',this.onDocDown);this.canvasRef.current&&this.canvasRef.current.removeEventListener('wheel',this.onWheel);}
+  componentDidUpdate(){this.applyCam();if(this._lastLines!==this.state.lines){this._lastLines=this.state.lines;const o=this.outRef.current;if(o)o.scrollTop=o.scrollHeight;}}
+  welcome(){return ['\x01m\x02Bienvenido. Escribe cualquier comando de Git y mira qué pasa en el grafo.\x03','\x01m\x02Nada se rompe: puedes equivocarte y volver atrás. \x03help\x01m\x02 muestra la lista de comandos.\x03',''].map(t=>({id:++this.lineId,segs:parseLine(t)}));}
+  save(repo){try{localStorage.setItem(KEY,JSON.stringify({repo:repo||this.state.repo,theme:this.state.theme,hist:this.hist.slice(-100)}));}catch(e){}}
+  manual(){this.lastManual=Date.now();cancelAnimationFrame(this.raf);this.camFinal=null;if(this.state.tip)this.setState({tip:null});}
+
+  // ---------- cámara ----------
+  vp(){const r=this.canvasRef.current?this.canvasRef.current.getBoundingClientRect():null;return {W:r?r.width:innerWidth,H:r?r.height:innerHeight};}
+  safe(){const {W,H}=this.vp();if(this.state.mobile)return {x0:24,y0:70,x1:W-24,y1:H*0.58-20};const t=this.state.term;const top=Math.min(170,H*0.2);
+    if(this.state.termMin||!t)return {x0:60,y0:top,x1:W-60,y1:H-70};
+    const above={x0:60,y0:top,x1:W-60,y1:Math.max(top+80,t.y-30)},right={x0:Math.min(W-200,t.x+t.w+40),y0:top,x1:W-40,y1:H-70};
+    const area=a=>Math.max(0,a.x1-a.x0)*Math.max(0,a.y1-a.y0);return area(right)>area(above)?right:above;}
+  applyCam(){const g=this.worldRef.current,c=this.canvasRef.current;const {x,y,k}=this.cam;if(g)g.setAttribute('transform',`translate(${x},${y}) scale(${k})`);if(c){c.style.backgroundSize=`${24*k}px ${24*k}px`;c.style.backgroundPosition=`${x}px ${y}px`;}}
+  zoomAt(px,py,f){const {x,y,k}=this.cam;const k2=clamp(k*f,0.4,2.5);this.cam={k:k2,x:px-(px-x)*(k2/k),y:py-(py-y)*(k2/k)};this.applyCam();}
+  camTo(t,dur=700){cancelAnimationFrame(this.raf);this.camFinal=t;if(!dur){this.cam={...t};this.applyCam();return;}
+    const s={...this.cam},{W,H}=this.vp();const sc={x:(W/2-s.x)/s.k,y:(H/2-s.y)/s.k},tc={x:(W/2-t.x)/t.k,y:(H/2-t.y)/t.k};const t0=performance.now();
+    const step=now=>{const p=Math.min(1,(now-t0)/dur),e=easeIO(p);const k=Math.exp(Math.log(s.k)+(Math.log(t.k)-Math.log(s.k))*e);const cx=sc.x+(tc.x-sc.x)*e,cy=sc.y+(tc.y-sc.y)*e;this.cam={k,x:W/2-cx*k,y:H/2-cy*k};this.applyCam();if(p<1)this.raf=requestAnimationFrame(step);else this.camFinal=null;};
+    this.raf=requestAnimationFrame(step);if(this.state.tip)this.setState({tip:null});}
+  fitCam(b,maxK=1.15){const a=this.safe();const bw=Math.max(b.x1-b.x0,1),bh=Math.max(b.y1-b.y0,1);const k=clamp(Math.min((a.x1-a.x0)/bw,(a.y1-a.y0)/bh,maxK),0.4,2.5);const cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2;return {k,x:(a.x0+a.x1)/2-cx*k,y:(a.y0+a.y1)/2-cy*k};}
+  headPos(L,repo){const h=this.GE.headHash(repo||this.state.repo);return (h&&L.pos[h])||null;}
+  headCam(L,k){const p=this.headPos(L)||{X:0,Y:0};const a=this.safe();return {k,x:(a.x0+a.x1)/2-p.X*k,y:(a.y0+a.y1)/2-p.Y*k};}
+  fitAll(dur=700,full){const L=this.L();if(!L||!L.bbox){const a=this.safe();this.camTo({k:1,x:(a.x0+a.x1)/2,y:(a.y0+a.y1)/2},dur);return;}
+    if(full){const {W,H}=this.vp();const a=this.state.mobile?this.safe():{x0:40,y0:90,x1:W-40,y1:H-60};const b=L.bbox;const k=clamp(Math.min((a.x1-a.x0)/(b.x1-b.x0),(a.y1-a.y0)/(b.y1-b.y0),1.15),0.4,2.5);this.camTo({k,x:(a.x0+a.x1)/2-(b.x0+b.x1)/2*k,y:(a.y0+a.y1)/2-(b.y0+b.y1)/2*k},dur);return;}
+    const c=this.fitCam(L.bbox);if(c.k<0.6&&this.headPos(L)){this.camTo(this.headCam(L,0.8),dur);return;}this.camTo(c,dur);}
+  inView(p,m=60){if(!p)return true;const a=this.safe(),{x,y,k}=this.cam;const sx=p.X*k+x,sy=p.Y*k+y;return sx>a.x0-20+m&&sx<a.x1+20-m&&sy>a.y0-60+m&&sy<a.y1-m;}
+  w2s(p){const {x,y,k}=this.cam;const r=this.canvasRef.current.getBoundingClientRect();return {x:r.left+p.X*k+x,y:r.top+p.Y*k+y};}
+  L(repo){repo=repo||this.state.repo;if(!repo||!this.GE)return null;if(this._Lr!==repo){this._Lr=repo;this._L=this.GE.layout(repo);}return this._L;}
+
+  // ---------- comandos ----------
+  run(text){if(!this.GE)return;this.finishAnims();const t=(text||'').trim();
+    if(t){if(this.hist[this.hist.length-1]!==t)this.hist.push(t);}this.histIdx=-1;
+    const echo={id:++this.lineId,segs:[...this.promptSegs(this.state.repo),{t:text,c:'var(--text-primary)',fw:400}]};
+    if(t==='clear'||t==='cls'){this.setState({lines:[],input:''});this.save();return;}
+    if(!t){this.setState(s=>({lines:[...s.lines,echo].slice(-500),input:''}));return;}
+    const res=this.GE.ejecutar(this.cur(),text);
+    if(res.accion&&res.accion.tipo==='editar'){const f=res.accion.archivo;this.setState(s=>({lines:[...s.lines,echo].slice(-500),input:'',editor:{file:f,text:s.repo.files[f]||''}}),()=>{const el=this.editorRef.current;el&&el.focus();});return;}
+    this.apply(res,echo);}
+  cur(){return this.repo||this.state.repo;}
+  apply(res,echo){const prev=this.cur(),next=res.estado;this.repo=next;
+    const plan=res.error?null:this.mkPlan(res.eventos,prev,next);if(plan)this.plan=plan;
+    const before=this.snapRects();
+    const out=res.salida.map(l=>({id:++this.lineId,segs:parseLine(l)}));
+    this.setState(s=>({repo:next,lines:[...s.lines,...(echo?[echo]:[]),...out].slice(-500),input:echo?'':s.input,resolverHidden:res.eventos.some(e=>e.type==='merge-conflict')?false:s.resolverHidden}),()=>this.after(res,before,prev,next,plan));
+    this.save(next);}
+  after(res,before,prev,next,plan){
+    const plain=res.salida.map(l=>l.replace(/\x01[^\x02]*\x02/g,'').replace(/\x03/g,'')).join(' ');
+    if(res.error){const el=this.termRef.current;if(el&&!this.reduced)el.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(-4px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}],{duration:300,easing:'ease-out'});this.setState({live:'Error. '+plain});return;}
+    const x=this.GE.explicar(res.eventos,next);if(x)this.toast(x);this.setState({live:(x?x.text.replace(/`/g,'')+' ':'')+plain.slice(0,300)});
+    if(plan===this.plan)this.choreo(res.eventos,before,prev,next,plan);}
+  toast(x){const id=++this.toastId;const t={id,icon:x.icon,ic:TONE[x.tone]||TONE.info,segs:codeSegs(x.text),op:0,tf:'translateY(-8px) scale(0.98)'};
+    this.setState(s=>{const list=[...s.toasts.filter(q=>!q.leaving),t];while(list.length>2)list.shift();return {toasts:list};});
+    requestAnimationFrame(()=>requestAnimationFrame(()=>this.setState(s=>({toasts:s.toasts.map(q=>q.id===id?{...q,op:1,tf:'none'}:q)}))));
+    setTimeout(()=>{this.setState(s=>({toasts:s.toasts.map(q=>q.id===id?{...q,op:0,tf:'translateY(-6px)',leaving:true}:q)}));setTimeout(()=>this.setState(s=>({toasts:s.toasts.filter(q=>q.id!==id)})),300);},4000);}
+  finishAnims(){this.timers.forEach(clearTimeout);this.timers=[];if(this.camFinal){const f=this.camFinal;cancelAnimationFrame(this.raf);this.cam={...f};this.camFinal=null;this.applyCam();}
+    try{document.getAnimations().forEach(a=>{const t=a.effect&&a.effect.getTiming&&a.effect.getTiming();if(t&&t.iterations===Infinity)return;try{a.finish();}catch(e){}});}catch(e){}
+    if(this.overlayRef.current)this.overlayRef.current.innerHTML='';if(this.plan&&this.plan.leaving&&this.plan.leaving.length){this.plan.leaving=[];this.setState(s=>({gv:s.gv+1}));}}
+  later(fn,ms){this.timers.push(setTimeout(fn,ms));}
+
+  mkPlan(evs,prev,next){const Lp=this.L(prev),Ln=this.GE.layout(next);this._Lr=next;this._L=Ln;
+    const auto=!this.reduced&&Date.now()-this.lastManual>4000;
+    const newNodes=Ln.nodes.filter(n=>!Lp.pos[n.h]).map(n=>n.h),newR=Ln.rnodes.filter(n=>!Lp.rpos[n.h]).map(n=>n.h);
+    const ffSteps=evs.filter(e=>e.type==='ref-moved'&&e.kind==='branch'&&e.from&&e.to).length;
+    const wide=auto&&(evs.some(e=>WIDE.includes(e.type))||evs.some(e=>e.type==='reset'&&e.count>1)||evs.some(e=>e.type==='fast-forward'));
+    const isCommit=evs.some(e=>['commit-created','commit-amended','merge-commit','cherry-picked','reverted'].includes(e.type));
+    const staged=Object.keys(this.GE.estadoArchivos(prev).st||{}).length;
+    let base=wide?650:0;if(isCommit&&staged&&!this.reduced)base+=320;
+    const births={},from={},rbirths={};const step=this.reduced?0:120;
+    newNodes.forEach((h,i)=>{births[h]=this.reduced?0:base+200+i*step;const c=next.commits[h];const src=c.copyOf||c.cherryOf;if(src&&Ln.pos[src])from[h]=Ln.pos[src];else if(Lp.rpos[h])from[h]=Lp.rpos[h];});
+    const push=evs.find(e=>e.type==='push-sent');newR.forEach((h,i)=>{rbirths[h]=this.reduced?0:base+(push?520:200)+i*step;});
+    const last=Math.max(0,...Object.values(births),...Object.values(rbirths));
+    const labelDelay=this.reduced?0:(newNodes.length?last+(Object.keys(from).length?560:260):base);
+    const newLabels={};Ln.labels.forEach(l=>{if(!Lp.labels.find(q=>q.key===l.key))newLabels[l.key]=1;});
+    const leaving=Lp.labels.filter(l=>l.kind!=='head'&&!Ln.labels.find(q=>q.key===l.key));
+    return {births,from,rbirths,labelDelay,newLabels,leaving,wide,base,newNodes,newR,Lp,Ln,isCommit,end:labelDelay+520,evs,push:!!push};}
+
+  snapRects(){const o={};document.querySelectorAll('[data-chip]').forEach(el=>{o[el.getAttribute('data-chip')]=el.getBoundingClientRect();});const st=document.querySelector('[data-stash]');if(st)o.__stash=st.getBoundingClientRect();return o;}
+  chip(k){return document.querySelector(`[data-chip="${CSS.escape(k)}"]`);}
+  fly(a,b,label,color,delay,dur,shrink,target){const o=this.overlayRef.current;if(!o||!a||!b||this.reduced)return;
+    const pa=a.width!=null?{x:a.left+a.width/2,y:a.top+a.height/2}:a,pb=b.width!=null?{x:b.left+b.width/2,y:b.top+b.height/2}:b;
+    const el=document.createElement('div');el.textContent=label;Object.assign(el.style,{position:'absolute',left:'0',top:'0',font:"500 12px 'Geist Mono', monospace",padding:'3px 8px',borderRadius:'6px',background:'var(--surface-solid)',boxShadow:`0 0 0 1px ${color}, 0 8px 20px rgba(0,0,0,.35)`,color,whiteSpace:'nowrap'});o.appendChild(el);
+    const mx=(pa.x+pb.x)/2,my=Math.min(pa.y,pb.y)-50;const T=(p,s)=>`translate(${p.x}px,${p.y}px) translate(-50%,-50%) scale(${s})`;
+    const an=el.animate([{transform:T(pa,1),opacity:0},{transform:T({x:pa.x*.85+mx*.15,y:pa.y*.85+my*.15},1.04),opacity:1,offset:.15},{transform:T({x:mx,y:my},shrink?.85:1.04),opacity:1,offset:.5},{transform:T(pb,shrink?.25:1),opacity:shrink?0:1}],{duration:dur,delay,easing:'cubic-bezier(0.65,0,0.35,1)',fill:'both'});
+    const rm=()=>el.remove();an.onfinish=rm;an.oncancel=rm;
+    if(target)target.animate([{opacity:0},{opacity:0,offset:.98},{opacity:1}],{duration:delay+dur});}
+  particle(a,b,color,delay){const g=this.worldRef.current;if(!g||this.reduced)return;const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('r','5');c.style.fill=color;g.appendChild(c);
+    const mx=(a.X+b.X)/2+30,my=(a.Y+b.Y)/2;const an=c.animate([{transform:`translate(${a.X}px,${a.Y}px) scale(.4)`,opacity:0},{transform:`translate(${mx}px,${my}px) scale(1)`,opacity:1,offset:.5},{transform:`translate(${b.X}px,${b.Y}px) scale(.5)`,opacity:0}],{duration:520,delay,easing:'cubic-bezier(0.65,0,0.35,1)',fill:'both'});const rm=()=>c.remove();an.onfinish=rm;an.oncancel=rm;}
+
+  choreo(evs,before,prev,next,P){if(!P)return;const L=P.Ln,GE=this.GE;const g=t=>evs.find(e=>e.type===t);const after=this.snapRects();
+    const handled=new Set();
+    const ce=g('commit-created')||g('commit-amended')||g('merge-commit')||g('cherry-picked')||g('reverted');
+    if(ce&&L.pos[ce.hash]){const to=this.w2s(L.pos[ce.hash]);Object.keys(before).filter(k=>k.startsWith('s:')).forEach((k,i)=>this.fly(before[k],to,k.slice(2),'var(--success)',i*70,420,true));}
+    evs.filter(e=>e.type==='file-staged').forEach((e,i)=>{handled.add('s:'+e.file);const a=before['w:'+e.file]||before['c:'+e.file];this.fly(a,after['s:'+e.file],e.file,'var(--success)',i*80,440,false,this.chip('s:'+e.file));});
+    evs.filter(e=>e.type==='file-unstaged').forEach((e,i)=>{this.fly(before['s:'+e.file],after['w:'+e.file],e.file,'var(--text-secondary)',i*80,440,false);});
+    const sp=g('stash-pushed');if(sp){const box=L.stash?this.w2s({X:L.stash.X,Y:L.stash.Y}):null;sp.files.forEach((f,i)=>this.fly(before['w:'+f]||before['s:'+f],box,f,'var(--text-secondary)',i*70,480,true));}
+    const so=g('stash-popped');if(so&&P.Lp.stash){const box=this.w2s({X:P.Lp.stash.X,Y:P.Lp.stash.Y});so.files.forEach((f,i)=>{handled.add('w:'+f);this.fly(box,after['w:'+f],f,'var(--warning)',i*70,480,false,this.chip('w:'+f));});}
+    const rs=g('reset');if(rs&&rs.mode!=='hard'){const src=after['c:__head'];Object.keys(after).filter(k=>(k.startsWith('s:')||k.startsWith('w:'))&&!before[k]).forEach((k,i)=>{handled.add(k);this.fly(src,after[k],k.slice(2),rs.mode==='soft'?'var(--success)':'var(--warning)',i*80,480,false,this.chip(k));});}
+    if(!this.reduced){Object.keys(after).forEach(k=>{if(before[k]||handled.has(k)||k.startsWith('c:'))return;const el=this.chip(k);el&&el.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}],{duration:280,easing:'cubic-bezier(0.22,1,0.36,1)'});});
+      evs.filter(e=>e.type==='file-modified').forEach(e=>{const el=this.chip('w:'+e.file);el&&el.animate([{boxShadow:'inset 0 0 0 1px rgba(251,191,36,0)'},{boxShadow:'inset 0 0 0 1px rgba(251,191,36,.9)',background:'rgba(251,191,36,.18)'},{boxShadow:'inset 0 0 0 1px rgba(251,191,36,0)'}],{duration:700,easing:'ease-out'});});
+      if(g('switched')||g('detached')||(g('reset')&&g('reset').mode==='hard')||g('fast-forward')){const z=document.querySelector('[data-zone="w"]');z&&z.animate([{opacity:.25},{opacity:1}],{duration:380,easing:'cubic-bezier(0.22,1,0.36,1)'});}}
+    // etiquetas que se mueven por el camino
+    if(!this.reduced){const lp={};P.Lp.labels.forEach(l=>lp[l.key]=l);
+      L.labels.forEach(l=>{const o=lp[l.key];if(!o||(o.X===l.X&&o.Y===l.Y))return;const el=document.querySelector(`[data-label="${CSS.escape(l.key)}"]`);if(!el)return;
+        let pts=[[o.X,o.Y]];const fromH=o.h,toH=l.h;const dy=l.Y-L.pos[toH].Y;
+        const chain=(a,b)=>{const out=[];let x=a,guard=0;while(x&&x!==b&&next.commits[x]&&guard++<40){out.push(x);x=next.commits[x].parents[0];}return x===b?out:null;};
+        let c=chain(toH,fromH);if(c&&c.length>1){pts=pts.concat(c.reverse().map(h=>[L.pos[h].X,L.pos[h].Y+dy]));}
+        else{c=chain(fromH,toH);if(c&&c.length>1)pts=pts.concat(c.slice(1).map(h=>[L.pos[h].X,L.pos[h].Y+dy]),[[l.X,l.Y]]);
+          else if(l.kind==='head'){const lift=g('head-detached')?70:40;pts.push([(o.X+l.X)/2,Math.min(o.Y,l.Y)-lift]);pts.push([l.X,l.Y]);}else pts.push([l.X,l.Y]);}
+        if(pts[pts.length-1][0]!==l.X||pts[pts.length-1][1]!==l.Y)pts.push([l.X,l.Y]);
+        el.animate(pts.map(p=>({transform:`translate(${p[0]}px,${p[1]}px)`})),{duration:Math.min(900,260+pts.length*110),delay:P.labelDelay,easing:'cubic-bezier(0.22,1,0.36,1)',fill:'backwards'});
+        if(l.kind==='head'&&g('head-detached')){const inn=el.querySelector('[data-inner]');inn&&inn.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],{duration:500,delay:P.labelDelay,easing:'cubic-bezier(0.22,1,0.36,1)'});}});}
+    // push: partículas
+    if(P.push){P.newR.forEach((h,i)=>{const a=L.pos[h],b=L.rpos[h];if(a&&b)this.particle(a,b,next.commits[h].lanes||L.rnodes.find(n=>n.h===h).color,P.base+i*120);});}
+    if(P.leaving.length)this.later(()=>{this.plan.leaving=[];this.setState(s=>({gv:s.gv+1}));},420);
+    // cámara
+    if(this.reduced)return;const hp=this.headPos(L,next);
+    if(Date.now()-this.lastManual<4000){this.pulseHead(next);return;}
+    if(P.wide){const pts=[];const addH=(h,pp)=>{if(h&&pp[h])pts.push(pp[h]);};
+      P.newNodes.forEach(h=>{addH(h,L.pos);const c=next.commits[h];c.parents.forEach(p=>addH(p,L.pos));if(c.copyOf)addH(c.copyOf,L.pos);if(c.cherryOf)addH(c.cherryOf,L.pos);});
+      evs.filter(e=>e.type==='ref-moved').forEach(e=>{addH(e.from,L.pos);addH(e.to,L.pos);});P.newR.forEach(h=>{addH(h,L.rpos);addH(h,L.pos);});
+      if(hp)pts.push(hp);const ph=GE.headHash(prev);if(ph&&L.pos[ph])pts.push(L.pos[ph]);if(L.phantom)pts.push(L.phantom.P);
+      if(pts.length){const b={x0:Math.min(...pts.map(p=>p.X))-110,x1:Math.max(...pts.map(p=>p.X))+110,y0:Math.min(...pts.map(p=>p.Y))-110,y1:Math.max(...pts.map(p=>p.Y))+60};
+        const out=this.fitCam(b,Math.min(this.cam.k*0.9,1));this.camTo(out,650);const fin=this.headCam(L,clamp(Math.max(out.k*1.15,0.9),0.4,1.1));this.camFinal=fin;
+        this.later(()=>this.camTo(fin,700),Math.max(700,P.end));if(!g('merge-conflict'))return;}return;}
+    if(hp&&!this.inView(hp)){this.camTo(this.headCam(L,clamp(this.cam.k,0.7,1.2)),700);return;}
+    if(P.isCommit&&hp){const k0=this.cam.k,{W,H}=this.vp();const s=this.w2s(hp);const r=this.canvasRef.current.getBoundingClientRect();const px=s.x-r.left,py=s.y-r.top;
+      const tgt={k:k0*1.06,x:px-(px-this.cam.x)*1.06,y:py-(py-this.cam.y)*1.06};const back={...this.cam};this.later(()=>{this.camTo(tgt,240);this.camFinal=back;this.later(()=>this.camTo(back,320),260);},Math.max(0,P.labelDelay-120));}
+    else if(P.newR.length){const rp=L.rpos[P.newR[0]];if(rp&&!this.inView(rp))this.camTo(this.fitCam(L.bbox),700);}}
+  pulseHead(repo){const h=this.GE.headHash(repo);const el=h&&document.querySelector(`[data-h="${h}"] [data-ripple]`);el&&el.animate([{opacity:.8,transform:'scale(1)'},{opacity:0,transform:'scale(2.4)'}],{duration:700,easing:'cubic-bezier(0.22,1,0.36,1)'});}
+
+  // ---------- refs de animación en SVG ----------
+  nodeRef=el=>{if(!el||!this.plan)return;const h=el.getAttribute('data-h'),P=this.plan,d=P.births[h];if(d==null||el.__born===P)return;el.__born=P;
+    const inner=el.querySelector('[data-inner]'),rip=el.querySelector('[data-ripple]');
+    if(this.reduced){el.animate([{opacity:0},{opacity:1}],{duration:200,fill:'backwards'});return;}
+    const f=P.from[h],to=P.Ln.pos[h];
+    if(f){const mid={X:(f.X+to.X)/2,Y:Math.min(f.Y,to.Y)-90};el.animate([{transform:`translate(${f.X}px,${f.Y}px)`,opacity:.3},{transform:`translate(${mid.X}px,${mid.Y}px)`,opacity:.7,offset:.5},{transform:`translate(${to.X}px,${to.Y}px)`,opacity:1}],{duration:620,delay:d,easing:'cubic-bezier(0.65,0,0.35,1)',fill:'backwards'});}
+    else inner&&inner.animate([{transform:'scale(0)'},{transform:'scale(1.15)',offset:.6},{transform:'scale(1)'}],{duration:450,delay:d,easing:'cubic-bezier(0.22,1,0.36,1)',fill:'backwards'});
+    const tx=el.querySelector('text');tx&&tx.animate([{opacity:0},{opacity:1}],{duration:280,delay:d+(f?600:200),fill:'backwards'});
+    rip&&rip.animate([{opacity:.7,transform:'scale(1)'},{opacity:0,transform:'scale(2.6)'}],{duration:700,delay:d+(f?600:160),easing:'cubic-bezier(0.22,1,0.36,1)'});};
+  rnodeRef=el=>{if(!el||!this.plan)return;const h=el.getAttribute('data-rh'),P=this.plan,d=P.rbirths[h];if(d==null||el.__born===P)return;el.__born=P;
+    if(this.reduced){el.animate([{opacity:0},{opacity:1}],{duration:200,fill:'backwards'});return;}const inner=el.querySelector('[data-inner]');inner&&inner.animate([{transform:'scale(0)',opacity:0},{transform:'scale(1.15)',opacity:1,offset:.6},{transform:'scale(1)',opacity:1}],{duration:450,delay:d,easing:'cubic-bezier(0.22,1,0.36,1)',fill:'backwards'});};
+  edgeRef=el=>{if(!el||!this.plan)return;const P=this.plan,ch=el.getAttribute('data-child'),r=el.getAttribute('data-remote');const d=r?P.rbirths[ch]:P.births[ch];if(d==null||el.__born===P)return;el.__born=P;
+    if(this.reduced){el.animate([{opacity:0},{opacity:1}],{duration:200,fill:'backwards'});return;}
+    let len=200;try{len=el.getTotalLength();}catch(e){}const delay=(!r&&P.from[ch])?d+540:Math.max(0,d-200);
+    el.animate([{strokeDasharray:`${len} ${len}`,strokeDashoffset:len},{strokeDasharray:`${len} ${len}`,strokeDashoffset:0}],{duration:380,delay,easing:'cubic-bezier(0.22,1,0.36,1)',fill:'backwards'});};
+  labelRef=el=>{if(!el||!this.plan)return;const k=el.getAttribute('data-label'),P=this.plan;const inner=el.querySelector('[data-inner]');if(!inner||el.__born===P)return;
+    if(el.getAttribute('data-leaving')){el.__born=P;inner.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(0.6)'}],{duration:380,easing:'cubic-bezier(0.22,1,0.36,1)',fill:'forwards'});return;}
+    if(!P.newLabels[k])return;el.__born=P;if(this.reduced){inner.animate([{opacity:0},{opacity:1}],{duration:200,fill:'backwards'});return;}
+    const tag=k.startsWith('g:');inner.animate(tag?[{opacity:0,transform:'translateY(-22px)'},{opacity:1,transform:'translateY(2px)',offset:.7},{opacity:1,transform:'none'}]:[{opacity:0,transform:'translateY(24px) scale(0.3)'},{opacity:1,transform:'none'}],{duration:450,delay:P.labelDelay,easing:'cubic-bezier(0.34,1.4,0.64,1)',fill:'backwards'});};
+  pulseRef=el=>{if(!el||el.__p)return;el.__p=1;el.animate([{opacity:1},{opacity:.3},{opacity:1}],{duration:1400,iterations:Infinity,easing:'ease-in-out'});};
+  stashRef=el=>{if(!el||!this.plan||el.__born)return;el.__born=1;if(this.plan.Lp.stash)return;const inner=el.querySelector('[data-inner]');inner&&inner.animate([{opacity:0,transform:'scale(.6)'},{opacity:1,transform:'none'}],{duration:450,delay:300,easing:'cubic-bezier(0.34,1.4,0.64,1)',fill:'backwards'});};
+
+  // ---------- tooltips ----------
+  hover(kind,id,pos,r,touch){clearTimeout(this.tipT);this.tipT=setTimeout(()=>this.setState({tip:{kind,id,X:pos.X,Y:pos.Y,r,touch}}),touch?0:120);}
+  unhover(){clearTimeout(this.tipT);if(this.state.tip&&!this.state.tip.touch)this.setState({tip:null});}
+  tipData(t,repo){const GE=this.GE;const sh=GE.short;
+    if(t.kind==='commit'||t.kind==='rcommit'){const c=repo.commits[t.id];if(!c)return null;const L=this.L();const nd=t.kind==='commit'?L.nodes.find(n=>n.h===t.id):null;
+      const refs=t.kind==='commit'?GE.refsDe(repo,t.id):Object.keys(repo.remote.branches).filter(b=>repo.remote.branches[b]===t.id).map(b=>'origin/'+b);if(t.kind==='commit'&&GE.headHash(repo)===t.id)refs.unshift('HEAD');
+      const tipo=nd&&nd.ghost?'Huérfano (sin rama que lo apunte)':c.parents.length>1?'Merge (dos padres)':c.revertOf?'Revert de '+sh(c.revertOf):c.cherryOf?'Copia de '+sh(c.cherryOf):c.copyOf?'Copia (rebase) de '+sh(c.copyOf):'Normal';
+      const ch=GE.cambiosCommit(repo,t.id);
+      const rows=[{k:'Autor',v:c.author.replace(/\s*<.*>/,''),ff:'inherit'},{k:'Tipo',v:tipo,ff:'inherit'}];if(refs.length)rows.push({k:'Apuntan',v:refs.join(', '),ff:"'Geist Mono',monospace"});if(ch.length&&c.parents.length<2)rows.push({k:'Archivos',v:ch.map(x=>x.t+' '+x.f).join('  '),ff:"'Geist Mono',monospace"});
+      return {title:(t.kind==='rcommit'?'origin · ':'')+'Commit #'+c.n,titleColor:'var(--text-primary)',hash:sh(c.hash),msg:c.msg,hasMsg:true,rows,note:nd&&nd.ghost?'Ya no forma parte de ninguna rama. Puedes recuperarlo con git reflog y git switch -c.':nd&&nd.dim?'Solo lo conoce origin/'+(Object.keys(repo.tracking).find(b=>repo.tracking[b]===t.id)||'main')+'. Únelo con git merge.':'',hasNote:!!(nd&&(nd.ghost||nd.dim))};}
+    if(t.kind==='branch'){const i=GE.infoRama(repo,t.id);const rows=[{k:'Apunta a',v:sh(i.hash)+' · '+i.msg,ff:'inherit'},{k:'Actual',v:i.actual?'Sí, HEAD está aquí':'No',ff:'inherit'}];if(i.vsMain)rows.push({k:'vs. main',v:`${i.vsMain[0]} por delante · ${i.vsMain[1]} por detrás`,ff:'inherit'});const up=repo.upstream[t.id];if(up)rows.push({k:'Remoto',v:'origin/'+up,ff:"'Geist Mono',monospace"});
+      return {title:t.id,titleColor:GE.colorRama(repo,t.id),hash:'',msg:'',hasMsg:false,rows,note:'Una rama es solo una etiqueta móvil: avanza con cada commit.',hasNote:true};}
+    if(t.kind==='head'){const det=repo.head.type==='detached';const h=GE.headHash(repo);return {title:det?'HEAD (separado)':'HEAD',titleColor:det?'var(--warning)':'var(--text-primary)',hash:'',msg:'',hasMsg:false,rows:[{k:'Apunta a',v:det?sh(h)+' (commit directo)':repo.head.name+' → '+sh(h),ff:"'Geist Mono',monospace"},{k:'Separado',v:det?'Sí':'No',ff:'inherit'}],note:det?'No estás en ninguna rama. Los commits que hagas aquí no tendrán rama: créala con git switch -c.':'HEAD indica dónde estás. El próximo commit nacerá aquí y la rama lo seguirá.',hasNote:true};}
+    if(t.kind==='track'||t.kind==='rbranch'){const h=t.kind==='track'?repo.tracking[t.id]:repo.remote.branches[t.id];return {title:t.kind==='track'?'origin/'+t.id:'main en origin'.replace('main',t.id),titleColor:GE.colorRama(repo,t.id),hash:sh(h),msg:repo.commits[h]?repo.commits[h].msg:'',hasMsg:true,rows:[],note:t.kind==='track'?'Lo último que sabes de origin. Se actualiza con fetch, pull y push.':'La rama tal como está en el servidor.',hasNote:true};}
+    if(t.kind==='tag'){const h=repo.tags[t.id];return {title:'Tag '+t.id,titleColor:'var(--text-primary)',hash:sh(h),msg:repo.commits[h].msg,hasMsg:true,rows:[],note:'Un tag marca un commit para siempre (por ejemplo, una versión).',hasNote:true};}
+    if(t.kind==='stash'){return {title:'Stash',titleColor:'var(--text-primary)',hash:'',msg:'',hasMsg:false,rows:repo.stash.slice(0,4).map((e,i)=>({k:`stash@{${i}}`,v:e.msg,ff:'inherit'})),note:'Cambios guardados aparte. Recupéralos con git stash pop.',hasNote:true};}
+    if(t.kind==='phantom'){return {title:'Merge pendiente',titleColor:'var(--danger)',hash:'',msg:'',hasMsg:false,rows:[],note:'Resuelve los conflictos, márcalos con git add y termina con git commit (o cancela con --abort).',hasNote:true};}
+    return null;}
+
+  nodeKey(e,h){const L=this.L();const me=L.nodes.find(n=>n.h===h);if(!me)return;const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+    if(e.key==='Enter'){this.setState(s=>({input:(s.input?s.input+' ':'')+this.GE.short(h)}));this.inputRef.current&&this.inputRef.current.focus();return;}
+    if(!dir)return;e.preventDefault();let best=null,bs=1e9;for(const n of L.nodes){if(n.h===h)continue;const dx=n.X-me.X,dy=n.Y-me.Y;const along=dx*dir[0]+dy*dir[1];if(along<=0)continue;const perp=Math.abs(dx*dir[1])+Math.abs(dy*dir[0]);const sc=along+perp*3;if(sc<bs){bs=sc;best=n;}}
+    if(best){const el=document.querySelector(`[data-h="${best.h}"]`);el&&el.focus({preventScroll:true});if(!this.inView(best))this.camTo(this.headCamAt(best),450);}}
+  headCamAt(p){const a=this.safe(),k=this.cam.k;return {k,x:(a.x0+a.x1)/2-p.X*k,y:(a.y0+a.y1)/2-p.Y*k};}
+
+  // ---------- grafo ----------
+  buildGraph(repo){const L=this.L(repo);const h=React.createElement;const GE=this.GE;const P=this.plan;const ld=P?P.labelDelay:0;const mono="'Geist Mono',monospace";
+    const evH=(kind,id,pos,r)=>({onMouseEnter:()=>this.hover(kind,id,pos,r),onMouseLeave:()=>this.unhover(),onFocus:()=>this.hover(kind,id,pos,r),onBlur:()=>{clearTimeout(this.tipT);this.setState({tip:null});},onPointerDown:e=>{if(e.pointerType==='touch'){e.stopPropagation();this.hover(kind,id,pos,r,true);}}});
+    const ch=[];
+    if(L.rbox){const b=L.rbox;ch.push(h('g',{key:'rbox'},h('rect',{x:b.x0,y:b.y0,width:b.x1-b.x0,height:b.y1-b.y0,rx:18,style:{fill:'var(--remote-fill)',stroke:'var(--border-strong)',strokeDasharray:'5 6',strokeWidth:1.2}}),
+      h('text',{x:b.x0+14,y:b.y0-10,style:{font:`500 12px ${mono}`,fill:'var(--text-secondary)'}},'origin'),h('text',{x:b.x0+70,y:b.y0-10,style:{font:'12px Geist, sans-serif',fill:'var(--text-muted)'}},'remoto simulado')));
+      L.redges.forEach(e=>ch.push(h('path',{key:e.id,d:e.d,'data-child':e.child,'data-remote':1,ref:this.edgeRef,fill:'none',style:{stroke:e.color,strokeWidth:2,opacity:.45,strokeLinecap:'round'}})));
+      L.rnodes.forEach(n=>ch.push(h('g',{key:'r'+n.h,'data-rh':n.h,ref:this.rnodeRef,style:{transform:`translate(${n.X}px,${n.Y}px)`,cursor:'default'},...evH('rcommit',n.h,n,11)},h('circle',{r:20,fill:'transparent'}),h('g',{'data-inner':1,style:{transformBox:'fill-box',transformOrigin:'center'}},h('circle',{r:11,style:{fill:n.color,fillOpacity:.35,stroke:n.color,strokeWidth:1.5,strokeDasharray:'3 2'}})))));
+      L.rlabels.forEach(l=>ch.push(h('g',{key:l.key,style:{transform:`translate(${l.X}px,${l.Y}px)`,transition:`transform 520ms cubic-bezier(0.34,1.36,0.64,1) ${ld}ms`},...evH('rbranch',l.ref,{X:l.X,Y:l.Y},10)},h('rect',{x:-l.w/2,y:-10,width:l.w,height:20,rx:6,style:{fill:l.color,fillOpacity:.1,stroke:l.color,strokeOpacity:.35,strokeDasharray:'3 2'}}),h('text',{y:4,textAnchor:'middle',style:{font:`12px ${mono}`,fill:l.color,opacity:.8}},l.text))));}
+    L.links.forEach(e=>ch.push(h('path',{key:e.id,d:e.d,'data-child':e.child,ref:this.edgeRef,fill:'none',style:{stroke:e.kind==='revert'?'var(--text-secondary)':'var(--text-muted)',strokeWidth:1.5,strokeDasharray:'2 5',strokeLinecap:'round',opacity:.7}})));
+    L.edges.forEach(e=>ch.push(h('path',{key:e.id,d:e.d,'data-child':e.child,ref:this.edgeRef,fill:'none',style:{stroke:e.ghost?'var(--text-muted)':e.color,strokeWidth:2.5,strokeLinecap:'round',opacity:e.ghost?.35:.9,strokeDasharray:e.ghost?'4 5':'none',transition:'opacity 450ms, d 450ms cubic-bezier(0.22,1,0.36,1)'}})));
+    if(L.phantom){const p=L.phantom;p.edges.forEach(e=>ch.push(h('path',{key:e.id,d:e.d,ref:this.pulseRef,fill:'none',style:{stroke:'var(--danger)',strokeWidth:2.5,strokeDasharray:'6 5',strokeLinecap:'round'}})));
+      ch.push(h('g',{key:'phantom',style:{transform:`translate(${p.P.X}px,${p.P.Y}px)`,cursor:'help'},...evH('phantom','x',p.P,16)},h('circle',{r:24,fill:'transparent'}),h('circle',{r:16,ref:this.pulseRef,style:{fill:'rgba(248,113,113,0.12)',stroke:'var(--danger)',strokeWidth:2,strokeDasharray:'3 3'}}),h('text',{y:5,textAnchor:'middle',style:{font:`600 13px ${mono}`,fill:'var(--danger)'}},'!')));}
+    if(L.stash){const s=L.stash;ch.push(h('g',{key:'stash','data-stash':1,ref:this.stashRef,style:{transform:`translate(${s.X}px,${s.Y}px)`,transition:'transform 450ms cubic-bezier(0.22,1,0.36,1)',cursor:'default'},...evH('stash','s',s,24)},h('g',{'data-inner':1,style:{transformBox:'fill-box',transformOrigin:'center'}},
+      h('rect',{x:-48,y:-22,width:96,height:44,rx:10,style:{fill:'var(--surface-solid)',stroke:'var(--border-strong)',strokeWidth:1}}),h('rect',{x:-42,y:-28,width:84,height:8,rx:3,style:{fill:'var(--surface-solid)',stroke:'var(--border)',display:s.n>1?'inline':'none'}}),
+      h('text',{y:-2,textAnchor:'middle',style:{font:`500 12px ${mono}`,fill:'var(--text-primary)'}},'stash'),h('text',{y:13,textAnchor:'middle',style:{font:'11px Geist, sans-serif',fill:'var(--text-muted)'}},s.n===1?'1 entrada':s.n+' entradas'))));}
+    const tipH=this.state.tip&&this.state.tip.kind==='commit'?this.state.tip.id:null;
+    L.nodes.forEach(n=>{const g=n.ghost,r=n.merge?16:14;ch.push(h('g',{key:n.h,'data-h':n.h,ref:this.nodeRef,tabIndex:0,role:'button','aria-label':`Commit ${n.n}: ${n.msg}${g?' (huérfano)':''}`,onKeyDown:e=>this.nodeKey(e,n.h),style:{transform:`translate(${n.X}px,${n.Y}px)`,transition:'transform 450ms cubic-bezier(0.22,1,0.36,1)',outline:'none',cursor:'pointer'},...evH('commit',n.h,n,r)},
+      h('circle',{r:28,fill:'transparent'}),
+      h('circle',{'data-ripple':1,r:14,style:{fill:'none',stroke:g?'var(--text-muted)':n.color,strokeWidth:2,opacity:0,transformBox:'fill-box',transformOrigin:'center'}}),
+      h('g',{'data-inner':1,style:{transformBox:'fill-box',transformOrigin:'center'}},
+        n.merge?h('circle',{r:21,style:{fill:'none',stroke:g?'var(--text-muted)':n.color,strokeWidth:1.5,opacity:g?.3:.85,transition:'opacity 450ms, stroke 450ms'}}):null,
+        h('circle',{r,style:{fill:g?'transparent':n.color,fillOpacity:g?0:n.dim?.45:1,stroke:g?'var(--text-secondary)':lighten(n.color,.35),strokeWidth:tipH===n.h?3:2,strokeDasharray:g?'3 3':'none',opacity:g?.35:1,transition:'fill-opacity 450ms, opacity 450ms, stroke 450ms'}})),
+      h('text',{y:r+18,textAnchor:'middle',style:{font:`500 10px ${mono}`,fill:'var(--text-muted)',opacity:g?.5:1,pointerEvents:'none'}},GE.short(n.h))));});
+    const labs=L.labels.concat(P&&P.leaving?P.leaving.map(l=>({...l,leaving:true})):[]);
+    labs.forEach(l=>{const kind=l.kind==='head'?'head':l.kind;const isH=l.kind==='head';const det=l.detached;
+      let fill,stroke,txt,fo=.15,so=.45,dash='none',fw=500,filter='none';
+      if(isH){fill=det?'var(--warning)':'var(--head)';stroke='none';txt=det?'#1A1405':'var(--head-ink)';fo=1;fw=600;}
+      else if(l.kind==='tag'){fill='var(--text-secondary)';stroke='var(--text-secondary)';txt='var(--text-primary)';fo=.12;so=.35;}
+      else if(l.kind==='track'){fill=l.color;stroke=l.color;txt=l.color;fo=.04;so=.4;dash='3 2';fw=400;}
+      else{fill=l.color;stroke=l.color;txt=l.color;if(l.current){fo=.24;so=.9;fw=600;filter=`drop-shadow(0 0 6px ${l.color}66)`;}else{fo=.13;so=.35;}}
+      ch.push(h('g',{key:(l.leaving?'x':'')+l.key,'data-label':l.key,'data-leaving':l.leaving?1:undefined,ref:this.labelRef,style:{transform:`translate(${l.X}px,${l.Y}px)`,transition:`transform 520ms cubic-bezier(0.34,1.36,0.64,1) ${ld}ms`,cursor:'default',pointerEvents:l.leaving?'none':'auto'},...evH(isH?'head':l.kind==='track'?'track':l.kind==='tag'?'tag':'branch',l.ref||'HEAD',{X:l.X,Y:l.Y},10)},
+        h('g',{'data-inner':1,style:{transformBox:'fill-box',transformOrigin:'center bottom'}},
+          isH?h('line',{x1:0,x2:0,y1:10,y2:15,style:{stroke:det?'var(--warning)':'var(--head)',strokeWidth:2}}):null,
+          h('rect',{x:-l.w/2,y:-10,width:l.w,height:20,rx:6,style:{fill,fillOpacity:fo,stroke,strokeOpacity:so,strokeDasharray:dash,filter}}),
+          l.kind==='tag'?h('rect',{x:-l.w/2+9,y:-3,width:6,height:6,transform:`rotate(45 ${-l.w/2+12} 0)`,style:{fill:'var(--text-secondary)'}}):null,
+          h('text',{x:l.kind==='tag'?6:0,y:4,textAnchor:'middle',style:{font:`${fw} 12px ${mono}`,fill:txt,opacity:l.kind==='branch'&&!l.current?.85:1}},l.text))));});
+    return h('svg',{key:'svg',width:'100%',height:'100%',style:{position:'absolute',inset:0,overflow:'visible'}},h('g',{ref:this.worldRef},...ch));}
+
+  promptSegs(repo){if(!repo)return [{t:'~/proyecto $ ',c:'var(--text-secondary)'}];const GE=this.GE;const segs=[{t:'~/proyecto',c:'var(--t-cyan)'}];
+    if(repo.inited){const op=repo.op?'|'+({merge:'MERGING',rebase:'REBASE','cherry-pick':'CHERRY-PICKING',revert:'REVERTING'}[repo.op.kind]):'';
+      if(repo.head.type==='branch')segs.push({t:' (',c:'var(--text-secondary)'},{t:repo.head.name+op,c:GE.colorRama(repo,repo.head.name)},{t:')',c:'var(--text-secondary)'});else segs.push({t:' (',c:'var(--text-secondary)'},{t:'HEAD separado'+op,c:'var(--warning)'},{t:')',c:'var(--text-secondary)'});}
+    segs.push({t:' $ ',c:'var(--text-secondary)'});return segs.map(s=>({...s,fw:400}));}
+
+  // ---------- terminal ----------
+  onKey=e=>{const v=this.state.input;
+    if(e.key==='Enter'){e.preventDefault();this.run(v);return;}
+    if(e.key==='l'&&e.ctrlKey){e.preventDefault();this.setState({lines:[]});return;}
+    if(e.key==='ArrowUp'){e.preventDefault();if(!this.hist.length)return;this.histIdx=this.histIdx<0?this.hist.length-1:Math.max(0,this.histIdx-1);this.setState({input:this.hist[this.histIdx]});return;}
+    if(e.key==='ArrowDown'){e.preventDefault();if(this.histIdx<0)return;this.histIdx++;if(this.histIdx>=this.hist.length){this.histIdx=-1;this.setState({input:''});}else this.setState({input:this.hist[this.histIdx]});return;}
+    if(e.key==='Tab'){e.preventDefault();const {last,pool}=this.GE.completar(this.cur(),v);if(!pool.length)return;
+      let pre=pool[0];for(const p of pool){while(!p.startsWith(pre))pre=pre.slice(0,-1);}const base=v.slice(0,v.length-last.length);
+      if(pool.length===1)this.setState({input:base+pool[0]+' '});else if(pre.length>last.length)this.setState({input:base+pre});
+      else this.setState(s=>({lines:[...s.lines,{id:++this.lineId,segs:[...this.promptSegs(s.repo),{t:v,c:'var(--text-primary)',fw:400}]},{id:++this.lineId,segs:[{t:pool.slice(0,30).join('   '),c:'var(--text-secondary)',fw:400}]}]}));}};
+  termDragStart=e=>{if(this.state.mobile||e.target.tagName==='BUTTON')return;const t=this.state.term;if(!t)return;const sx=e.clientX,sy=e.clientY,ox=t.x,oy=t.y;
+    const mv=ev=>this.setState(s=>({term:{...s.term,x:clamp(ox+ev.clientX-sx,-s.term.w+120,innerWidth-120),y:clamp(oy+ev.clientY-sy,0,innerHeight-40)},termMax:false}));
+    const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);};addEventListener('pointermove',mv);addEventListener('pointerup',up);};
+  termResizeStart=e=>{e.preventDefault();e.stopPropagation();const t=this.state.term;const sx=e.clientX,sy=e.clientY,ow=t.w,oh=t.h;
+    const mv=ev=>this.setState(s=>({term:{...s.term,w:clamp(ow+ev.clientX-sx,340,innerWidth-s.term.x-8),h:clamp(oh+ev.clientY-sy,160,innerHeight-s.term.y-8)},termMax:false}));
+    const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);};addEventListener('pointermove',mv);addEventListener('pointerup',up);};
+
+  canvasDown=e=>{if(e.target.closest&&e.target.closest('[data-h],[data-label],[data-stash]'))return;const el=this.canvasRef.current;try{el.setPointerCapture(e.pointerId);}catch(x){}
+    this.ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});this.manual();el.style.cursor='grabbing';
+    const mv=ev=>{if(!this.ptrs.has(ev.pointerId))return;const prev=this.ptrs.get(ev.pointerId);
+      if(this.ptrs.size===1){this.cam={...this.cam,x:this.cam.x+ev.clientX-prev.x,y:this.cam.y+ev.clientY-prev.y};this.applyCam();}
+      else{const others=[...this.ptrs.entries()].filter(([k])=>k!==ev.pointerId);const o=others[0][1];const d0=Math.hypot(prev.x-o.x,prev.y-o.y),d1=Math.hypot(ev.clientX-o.x,ev.clientY-o.y);const r=el.getBoundingClientRect();if(d0>0)this.zoomAt((ev.clientX+o.x)/2-r.left,(ev.clientY+o.y)/2-r.top,d1/d0);}
+      this.ptrs.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});this.lastManual=Date.now();};
+    const up=ev=>{this.ptrs.delete(ev.pointerId);if(!this.ptrs.size){el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);el.style.cursor='grab';}};
+    if(this.ptrs.size===1){el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);}};
+
+  loadRepo(estado){this.finishAnims();this.plan=null;this.repo=estado;this.setState({repo:estado,resetOpen:false,tip:null,resolverHidden:false},()=>{this.fitAll(this.reduced?0:700);this.save(estado);});}
+
+  renderVals(){const s=this.state,repo=s.repo,GE=this.GE;const ready=!!(repo&&GE);
+    if(ready&&(this._gr!==repo||this._gv!==s.gv||this._gt!==(s.tip&&s.tip.id))){this._gr=repo;this._gv=s.gv;this._gt=s.tip&&s.tip.id;this._g=this.buildGraph(repo);}
+    const L=ready?this.L():null;
+    const ef=ready?GE.estadoArchivos(repo):{st:[],un:[],ut:[],conf:[],H:{}};const H=ef.H||{};
+    const wd=[];if(ready){const names=Object.keys(repo.files).concat(Object.keys(repo.index).filter(f=>!(f in repo.files))).sort();
+      for(const f of names){const del=!(f in repo.files);const conf=ef.conf.includes(f);const ut=!(f in repo.index)&&!del;const mod=!del&&!ut&&repo.files[f]!==repo.index[f];
+        let letter='',dot='var(--text-muted)',color='var(--text-secondary)',bg='transparent',title='Sin cambios';
+        if(!repo.inited){dot='var(--text-muted)';color='var(--text-primary)';title='Archivo (aún no hay repositorio)';}
+        else if(conf){letter='!';dot='var(--danger)';color='var(--danger)';bg='rgba(248,113,113,0.1)';title='En conflicto: resuélvelo y usa git add';}
+        else if(ut){letter='U';dot='var(--danger)';color='var(--text-primary)';title='Sin seguimiento: Git aún no lo rastrea';}
+        else if(del){letter='D';dot='var(--danger)';color='var(--text-muted)';title='Borrado, sin preparar';}
+        else if(mod){letter='M';dot='var(--warning)';color='var(--text-primary)';title='Modificado, sin preparar';}
+        wd.push({name:f,letter,dot,color,bg,title,deco:del?'line-through':'none'});}}
+    const stg=ef.st.map(x=>({name:x.f,letter:{nuevo:'A',modificado:'M',borrado:'D'}[x.t],title:{nuevo:'Archivo nuevo, preparado',modificado:'Modificación preparada',borrado:'Borrado preparado'}[x.t],deco:x.t==='borrado'?'line-through':'none'}));
+    const cm=Object.keys(H).sort().map(f=>({name:f}));const hh=ready?GE.headHash(repo):null;
+    const VW=s.vw||innerWidth||1024,VH=s.vh||innerHeight||700;
+    const t=s.term||{x:16,y:Math.max(80,VH-376),w:Math.min(580,VW-32),h:360};const mob=s.mobile;const sheetH=Math.round(VH*0.42);
+    const termOpen=!s.termMin;const tW=mob?'100%':(s.termMax?Math.min(VW-32,900)+'px':t.w+'px');const tH=mob?(termOpen?sheetH+'px':'36px'):(termOpen?(s.termMax?Math.min(VH-120,640):t.h)+'px':'36px');
+    const tLeft=mob?'0px':(s.termMax?'16px':t.x+'px');const tTop=mob?(VH-(termOpen?sheetH:36))+'px':(s.termMax?Math.max(70,VH-Math.min(VH-120,640)-16)+'px':(termOpen?t.y:t.y+t.h-36)+'px');
+    // tooltip
+    let tip=null,tipX='0px',tipY='0px',tipTf='none',tipArrowX='50%',tipArrowY='0px',tipArrowShadow='none';
+    if(ready&&s.tip&&this.canvasRef.current){tip=this.tipData(s.tip,repo);if(tip){const p=this.w2s({X:s.tip.X,Y:s.tip.Y});const off=(s.tip.r||14)*this.cam.k+12;const below=p.y<210;const cx=clamp(p.x,140,VW-140);
+      tipX=cx+'px';tipY=(below?p.y+off:p.y-off)+'px';tipTf=below?'translateX(-50%)':'translate(-50%,-100%)';tipArrowX=`calc(50% + ${p.x-cx}px)`;tipArrowY=below?'-5px':'calc(100% - 5px)';tipArrowShadow=below?'-1px -1px 0 0 var(--border)':'1px 1px 0 0 var(--border)';}}
+    // resolver
+    const op=ready?repo.op:null;const hasConf=!!(op&&op.data&&Object.keys(op.data).length&&(op.conflicts.length||Object.keys(op.data).some(f=>(repo.files[f]||'').includes('<<<<<<<'))));
+    const conflicts=hasConf?Object.keys(op.data).map(f=>{const d=op.data[f];const cur=repo.files[f];const pending=op.conflicts.includes(f);const marked=(cur||'').includes('<<<<<<<');
+      const res=r=>()=>{this.finishAnims();this.apply(GE.resolver(this.cur(),f,r),null);};
+      return {file:f,ours:d.ours==null?'(borrado)':d.ours||'(vacío)',theirs:d.theirs==null?'(borrado)':d.theirs||'(vacío)',theirsName:op.otherName,state:!pending?'Resuelto':marked?'Pendiente':'Falta git add',stateColor:!pending?'var(--success)':marked?'var(--danger)':'var(--warning)',
+        mine:res('mia'),their:res('suya'),both:res('ambas'),edit:()=>this.setState({editor:{file:f,text:this.state.repo.files[f]||''}},()=>{this.editorRef.current&&this.editorRef.current.focus();})};}):[];
+    const fin=op?(op.kind==='rebase'?'`git rebase --continue`':op.kind==='merge'?'`git commit`':'`git '+op.kind+' --continue`'):'';
+    const resolverHint=codeSegs(op?`Elige una versión (o edita el archivo), márcalo con \`git add <archivo>\` y termina con ${fin}. Para cancelar: \`git ${op.kind} --abort\`.`:'','var(--text-secondary)');
+    const lastRemote=ready&&Object.keys(repo.remote.branches).length>0;
+    const empty=ready&&L&&!L.nodes.length;
+    return {
+      canvasRef:this.canvasRef,termRef:this.termRef,inputRef:this.inputRef,overlayRef:this.overlayRef,outRef:this.outRef,editorRef:this.editorRef,
+      graphEl:ready?this._g:null,
+      showEmpty:!!empty,emptyTitle:ready&&!repo.inited?'Esta carpeta todavía no es un repositorio':'Aún no hay commits',emptyText:ready&&!repo.inited?'Escribe git init en la terminal para que Git empiece a vigilarla.':'Crea un archivo (echo "hola" > notas.txt), prepáralo con git add y guárdalo con git commit -m "Primer commit".',
+      stripVisible:!mob||s.stripMobile,stripButton:mob&&!s.stripMobile,stripOpen:mob?true:s.stripOpen,toggleStrip:()=>mob?this.setState({stripMobile:false}):this.setState(q=>({stripOpen:!q.stripOpen})),toggleStripMobile:()=>this.setState({stripMobile:true}),
+      stripW:mob?'calc(100% - 24px)':'440px',stripMaxH:Math.max(96,Math.min(260,Math.round(((s.vh||innerHeight||700)-420)*0.6)))+'px',chevron:(mob?true:s.stripOpen)?'rotate(0deg)':'rotate(-90deg)',
+      stripSummary:ready?(repo.inited?[ef.un.length+ef.ut.length?`${ef.un.length+ef.ut.length} sin preparar`:'',ef.st.length?`${ef.st.length} preparados`:'',ef.conf.length?`${ef.conf.length} en conflicto`:''].filter(Boolean).join(' · ')||'todo guardado':'sin repositorio'):'',
+      stripCount:String(Object.keys(ready?repo.files:{}).length),
+      wd,wdEmpty:!wd.length,stg,stgEmpty:!stg.length,cm,cmEmpty:!cm.length,cmEmptyText:ready&&repo.inited?'sin commits':'sin repositorio',headShort:hh?GE.short(hh):'',
+      showMate:!!lastRemote,mateLabel:mob?'Compañero':'Simular cambio de un compañero en origin',mate:()=>{this.finishAnims();this.apply(GE.companero(this.cur()),null);},
+      toggleTheme:()=>{const th=s.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=th;this.setState({theme:th},()=>this.save());},
+      resetOpen:s.resetOpen,toggleReset:()=>this.setState(q=>({resetOpen:!q.resetOpen})),
+      resetExample:()=>{this.loadRepo(GE.ejemplo());this.setState(q=>({lines:[...q.lines,{id:++this.lineId,segs:parseLine('\x01m\x02Repositorio reiniciado: README.md y dos commits en main.\x03')}]}));},
+      resetEmpty:()=>{this.loadRepo(GE.vacio());this.setState(q=>({lines:[...q.lines,{id:++this.lineId,segs:parseLine('\x01m\x02Carpeta vacía. Empieza con git init.\x03')}]}));},
+      toasts:s.toasts,
+      tipOn:!!tip,tip:tip||{rows:[]},tipX,tipY,tipTf,tipArrowX,tipArrowY,tipArrowShadow,
+      resolverOn:hasConf&&!s.resolverHidden,resolverPill:hasConf&&s.resolverHidden,resolverTitle:op?({merge:'Conflicto de merge',rebase:'Conflicto en el rebase','cherry-pick':'Conflicto en el cherry-pick',revert:'Conflicto en el revert'}[op.kind]):'',conflicts,resolverHint,
+      hideResolver:()=>this.setState({resolverHidden:true}),showResolver:()=>this.setState({resolverHidden:false}),
+      editorOn:!!s.editor,editorFile:s.editor?s.editor.file:'',editorText:s.editor?s.editor.text:'',editorChange:e=>{const v=e.target.value;this.setState(q=>({editor:{...q.editor,text:v}}));},
+      editorSave:()=>{const ed=this.state.editor;if(!ed)return;this.setState({editor:null});this.finishAnims();this.apply(GE.escribir(this.cur(),ed.file,ed.text),{id:++this.lineId,segs:parseLine(`\x01m\x02(guardado ${ed.file})\x03`)});setTimeout(()=>this.inputRef.current&&this.inputRef.current.focus(),0);},
+      editorCancel:()=>this.setState({editor:null}),editorKey:e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();this.renderVals().editorSave();}else if(e.key==='Escape'){e.stopPropagation();this.setState({editor:null});}},
+      camBottom:mob?(sheetH+(termOpen?0:-sheetH+36)+12)+'px':'16px',
+      zoomIn:()=>{const {W,H:Hh}=this.vp();const k=clamp(this.cam.k*1.25,0.4,2.5),f=k/this.cam.k;this.manual();this.camTo({k,x:W/2-(W/2-this.cam.x)*f,y:Hh/2-(Hh/2-this.cam.y)*f},280);},
+      zoomOut:()=>{const {W,H:Hh}=this.vp();const k=clamp(this.cam.k/1.25,0.4,2.5),f=k/this.cam.k;this.manual();this.camTo({k,x:W/2-(W/2-this.cam.x)*f,y:Hh/2-(Hh/2-this.cam.y)*f},280);},
+      fitBtn:()=>{this.lastManual=0;this.fitAll(700,true);},headBtn:()=>{this.lastManual=0;const L2=this.L();if(L2)this.camTo(this.headCam(L2,clamp(this.cam.k,0.9,1.2)),700);},
+      tLeft,tTop,tW,tH,tRadius:mob?'14px 14px 0 0':'14px',tTransition:'height 280ms cubic-bezier(0.22,1,0.36,1), top 280ms cubic-bezier(0.22,1,0.36,1)',
+      termDragStart:this.termDragStart,termResizeStart:this.termResizeStart,dragCursor:mob?'default':'grab',resizable:!mob&&termOpen,
+      minimize:()=>this.setState(q=>({termMin:!q.termMin})),toggleMax:()=>this.setState(q=>({termMax:!q.termMax,termMin:false})),termOpen,
+      lines:s.lines,promptSegs:this.promptSegs(repo),input:s.input,onInput:e=>this.setState({input:e.target.value}),onKey:this.onKey,
+      focusInput:e=>{if(window.getSelection&&String(window.getSelection()).length)return;this.inputRef.current&&this.inputRef.current.focus({preventScroll:true});},
+      canvasDown:this.canvasDown,live:s.live};}
+}
+</script>
+</body>
+</html>
