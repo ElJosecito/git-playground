@@ -1,0 +1,323 @@
+// App-level data hook: owns the playground reducer and every handler that
+// talks to the engine. Per design decision D1, the engine is ALWAYS called
+// here (in a handler), never inside `playgroundReducer` — `repoRef` mirrors
+// the oracle's `this.repo` mutable field so a second command run before
+// React re-renders still sees the first command's result (relevant under
+// StrictMode's double-invoked effects/reducers too).
+//
+// The initial repo defaults to `GitEngine.ejemplo()`. Phase 7's
+// `usePersistence` (tasks.md 7.3/7.4) will replace this default with the
+// real `gitpg:v1` round trip (falling back to `ejemplo()` only on
+// missing/corrupt storage) — until then this hook boots the same fixture
+// every time, same as a fresh install of the original.
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef } from 'react';
+import { GitEngine } from '../engine';
+import type { CommandResult, GitEvent, RepoState } from '../engine/types';
+import { createInitialPlaygroundState, playgroundReducer } from './playgroundReducer';
+import type { LineInput, PlaygroundState } from './playgroundReducer';
+import { parseLine } from '../ui/markup';
+import { loadHistory, saveHistory } from './history';
+import { installDebugApi } from './debugApi';
+
+/** The slice of `useChoreography`'s result that this hook drives, per
+ * design's data-flow diagram: "useGitPlayground (handlers): choreo.
+ * finishAll(); res=ejecutar(...); plan=choreo.prepare(...); ...;
+ * dispatch(...)" and "useLayoutEffect[transition.id] -> choreo.after()".
+ * Optional (and typed as a minimal structural slice, not the full
+ * `UseChoreographyResult`) so this hook stays usable/testable without a
+ * DOM-backed choreography instance (e.g. Phase 7 default, existing tests). */
+export interface ChoreographyApi {
+  planRef: { current: { leaving: unknown[] } | null };
+  prepare(evs: GitEvent[], prev: RepoState, next: RepoState, isError: boolean): void;
+  after(res: CommandResult, prev: RepoState, next: RepoState): string;
+  finishAll(): void;
+}
+
+// Byte-identical to the oracle's `welcome()` (design-handoff/Git
+// Playground.dc.html).
+const WELCOME_RAW = [
+  '\x01m\x02Bienvenido. Escribe cualquier comando de Git y mira qué pasa en el grafo.\x03',
+  '\x01m\x02Nada se rompe: puedes equivocarte y volver atrás. \x03help\x01m\x02 muestra la lista de comandos.\x03',
+  '',
+];
+
+function createBootState(initialRepo?: RepoState): PlaygroundState {
+  const base = createInitialPlaygroundState();
+  const lines = WELCOME_RAW.map((text, i) => ({ id: i + 1, segs: parseLine(text) }));
+  return { ...base, repo: initialRepo ?? GitEngine.ejemplo(), lines, nextLineId: lines.length + 1 };
+}
+
+export type ConflictMode = 'mia' | 'suya' | 'ambas';
+
+/** Phase 7 (tasks.md 7.3/7.4): injected by `PlaygroundShell` to fold the full
+ * `gitpg:v1` `{repo, theme, hist}` round trip (owned by `usePersistence`)
+ * into this hook's boot state and save points, superseding the hist-only
+ * defaults below. Optional and backward compatible — tests and any other
+ * caller that omits it keep booting from `GitEngine.ejemplo()` and
+ * `history.ts`'s hist-only storage slot, unchanged. */
+export interface PersistenceDeps {
+  initialRepo?: RepoState;
+  initialHist?: string[];
+  /** Called with the (possibly just-updated) repo and the full history
+   * array at every point the oracle's own `save()` is called: after a
+   * command applies (`apply() -> save(next)`), on `clear`/`cls`
+   * (`this.save()`), and on `loadRepo()` (`loadRepo -> save(estado)`).
+   * Deliberately NOT called on the editar-accion path (oracle doesn't call
+   * save() there either) or on an empty Enter. */
+  persist?(repo: RepoState, hist: string[]): void;
+}
+
+export interface UseGitPlaygroundResult {
+  state: PlaygroundState;
+  run(text: string): void;
+  resolveConflict(file: string, mode: ConflictMode): void;
+  openEditor(file: string): void;
+  simulateTeammate(): void;
+  saveFile(file: string, text: string): void;
+  setEditorText(text: string): void;
+  closeEditor(): void;
+  loadRepo(repo: RepoState, notice?: string): void;
+  setInput(value: string): void;
+  historyPrev(): void;
+  historyNext(): void;
+  completeInput(currentInput: string): void;
+  setResolverHidden(hidden: boolean): void;
+  toggleResetMenu(): void;
+  /** Ctrl+L (oracle: `this.setState({lines:[]})`) — clears only the output
+   * lines, leaving any pending typed input untouched. Distinct from
+   * `run('clear')`/`run('cls')`, which clear both. */
+  clearLines(): void;
+  /** Escape hatch for callers that own a piece of the persisted snapshot
+   * this hook doesn't (namely `theme`, owned by `useTheme` one level up in
+   * `PlaygroundShell`) — persists the CURRENT repo/hist on demand, matching
+   * the oracle's `toggleTheme` calling `this.save()` with no repo arg
+   * (defaults to `this.state.repo`). */
+  persistNow(): void;
+}
+
+export function useGitPlayground(choreo?: ChoreographyApi, persistence?: PersistenceDeps): UseGitPlaygroundResult {
+  const initialRepo = persistence?.initialRepo;
+  const [state, dispatch] = useReducer(playgroundReducer, undefined, () => createBootState(initialRepo));
+  const repoRef = useRef<RepoState | null>(state.repo);
+  // Queue of commands whose `choreo.after()` hasn't run yet (D5's
+  // after-command hook point, drained below). Needed because two
+  // synchronous handler calls in the same tick (e.g. two back-to-back
+  // `window.GitPlayground.ejecutar()` calls) batch into ONE React commit —
+  // `state.transition` only tracks the latest one, and the effect it keys
+  // only fires once per commit. Without this queue the first command's
+  // after()-driven toast/aria-live/animation choreography would silently
+  // never run. `prepare()` is unaffected (always called synchronously, once
+  // per command, in the handler below).
+  const pendingAfterRef = useRef<Array<{ res: CommandResult; prev: RepoState | null; next: RepoState }>>([]);
+  const historyRef = useRef<string[]>(persistence?.initialHist ?? loadHistory());
+  const histIdxRef = useRef(-1);
+  // Default fallback persists only the hist slice (Phase 3 behavior,
+  // `history.ts`'s `saveHistory`), ignoring `repo` — matches the signature
+  // but not the full `{repo, theme, hist}` round trip, which only
+  // `PlaygroundShell`'s injected `persistence.persist` provides.
+  const persist = persistence?.persist ?? ((_repo: RepoState, hist: string[]) => saveHistory(hist));
+
+  const applyResult = useCallback(
+    (res: CommandResult, prefixLine: LineInput | null) => {
+      const prev = repoRef.current;
+      if (choreo && prev) choreo.prepare(res.eventos, prev, res.estado, !!res.error);
+      pendingAfterRef.current.push({ res, prev, next: res.estado });
+      repoRef.current = res.estado;
+      dispatch({ type: 'applied', res, prefixLine });
+      persist(res.estado, historyRef.current);
+    },
+    [choreo, persist],
+  );
+
+  // D5's after-command hook point: fires once the DOM has committed `next`
+  // (so rects can be measured) but before paint, keyed on `transition.id`
+  // so it only runs once per actually-new command (not on every render).
+  // Drains `pendingAfterRef` rather than just reading `state.transition`
+  // directly, so that if two (or more) commands batched into this single
+  // commit (`state.transition` only tracks the latest), `after()` still
+  // runs once per command, in order, each with its OWN prev/next pair.
+  useLayoutEffect(() => {
+    const pending = pendingAfterRef.current;
+    pendingAfterRef.current = [];
+    if (!choreo) return;
+    for (const { res, prev, next } of pending) {
+      if (!prev) continue;
+      const live = choreo.after(res, prev, next);
+      dispatch({ type: 'liveSet', text: live });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.transition?.id]);
+
+  const run = useCallback(
+    (text: string) => {
+      choreo?.finishAll();
+      const trimmed = text.trim();
+      if (trimmed) {
+        if (historyRef.current[historyRef.current.length - 1] !== trimmed) {
+          historyRef.current = [...historyRef.current, trimmed];
+        }
+      }
+      histIdxRef.current = -1;
+
+      // Oracle (design-handoff/Git Playground.dc.html, line 290): the
+      // `clear`/`cls` typed command calls `this.save()` with no repo arg
+      // (defaults to the CURRENT, unchanged repo) — distinct from `apply()`'s
+      // `save(next)`, which `applyResult` below already covers.
+      if (trimmed === 'clear' || trimmed === 'cls') {
+        dispatch({ type: 'cleared' });
+        persist(repoRef.current ?? GitEngine.vacio(), historyRef.current);
+        return;
+      }
+      if (!trimmed) {
+        dispatch({ type: 'echoed', text });
+        return;
+      }
+      const repo = repoRef.current ?? GitEngine.vacio();
+      const res = GitEngine.ejecutar(repo, text);
+      if (res.accion && res.accion.tipo === 'editar') {
+        // Oracle: the editar-accion path never calls save() either.
+        dispatch({ type: 'editorOpened', file: res.accion.archivo, echoText: text });
+        return;
+      }
+      applyResult(res, { kind: 'echo', text });
+    },
+    [applyResult, choreo, persist],
+  );
+
+  // Ctrl+L (oracle: `this.setState({lines:[]})`) — lines only, no `save()`
+  // call either (matches the oracle, which doesn't persist on this path).
+  const clearLines = useCallback(() => dispatch({ type: 'linesCleared' }), []);
+
+  const resolveConflict = useCallback(
+    (file: string, mode: ConflictMode) => {
+      choreo?.finishAll();
+      const repo = repoRef.current ?? GitEngine.vacio();
+      applyResult(GitEngine.resolver(repo, file, mode), null);
+    },
+    [applyResult, choreo],
+  );
+
+  // Opens the editor directly for `file`, with no terminal echo — the
+  // conflict resolver's "Editar…" button (Phase 6) doesn't go through
+  // `run()`/the terminal at all, unlike the engine's `accion: {tipo:
+  // 'editar'}` path above.
+  const openEditor = useCallback((file: string) => {
+    dispatch({ type: 'editorOpened', file, echoText: null });
+  }, []);
+
+  const simulateTeammate = useCallback(() => {
+    choreo?.finishAll();
+    const repo = repoRef.current ?? GitEngine.vacio();
+    applyResult(GitEngine.companero(repo), null);
+  }, [applyResult, choreo]);
+
+  const saveFile = useCallback(
+    (file: string, text: string) => {
+      const repo = repoRef.current ?? GitEngine.vacio();
+      dispatch({ type: 'editorClosed' });
+      choreo?.finishAll();
+      applyResult(GitEngine.escribir(repo, file, text), { kind: 'markup', text: `\x01m\x02(guardado ${file})\x03` });
+    },
+    [applyResult, choreo],
+  );
+
+  const setEditorText = useCallback((text: string) => dispatch({ type: 'editorChanged', text }), []);
+  const closeEditor = useCallback(() => dispatch({ type: 'editorClosed' }), []);
+
+  const loadRepo = useCallback(
+    (repo: RepoState, notice?: string) => {
+      choreo?.finishAll();
+      if (choreo) choreo.planRef.current = null;
+      repoRef.current = repo;
+      dispatch({ type: 'repoLoaded', repo, notice });
+      // Oracle: `loadRepo(estado){...this.setState({repo:estado,...},()=>{...this.save(estado);})`.
+      persist(repo, historyRef.current);
+    },
+    [choreo, persist],
+  );
+
+  const setInput = useCallback((value: string) => dispatch({ type: 'inputChanged', value }), []);
+
+  const historyPrev = useCallback(() => {
+    if (!historyRef.current.length) return;
+    histIdxRef.current = histIdxRef.current < 0 ? historyRef.current.length - 1 : Math.max(0, histIdxRef.current - 1);
+    dispatch({ type: 'inputChanged', value: historyRef.current[histIdxRef.current]! });
+  }, []);
+
+  const historyNext = useCallback(() => {
+    if (histIdxRef.current < 0) return;
+    histIdxRef.current += 1;
+    if (histIdxRef.current >= historyRef.current.length) {
+      histIdxRef.current = -1;
+      dispatch({ type: 'inputChanged', value: '' });
+    } else {
+      dispatch({ type: 'inputChanged', value: historyRef.current[histIdxRef.current]! });
+    }
+  }, []);
+
+  const completeInput = useCallback((currentInput: string) => {
+    const repo = repoRef.current ?? GitEngine.vacio();
+    const { last, pool } = GitEngine.completar(repo, currentInput);
+    if (!pool.length) return;
+    let prefix = pool[0]!;
+    for (const candidate of pool) {
+      while (!candidate.startsWith(prefix)) prefix = prefix.slice(0, -1);
+    }
+    const base = currentInput.slice(0, currentInput.length - last.length);
+    if (pool.length === 1) {
+      dispatch({ type: 'inputChanged', value: base + pool[0] + ' ' });
+    } else if (prefix.length > last.length) {
+      dispatch({ type: 'inputChanged', value: base + prefix });
+    } else {
+      dispatch({
+        type: 'linesAppended',
+        entries: [
+          { kind: 'echo', text: currentInput },
+          { kind: 'plain', text: pool.slice(0, 30).join('   ') },
+        ],
+      });
+    }
+  }, []);
+
+  const setResolverHidden = useCallback((hidden: boolean) => dispatch({ type: 'resolverToggled', hidden }), []);
+  const toggleResetMenu = useCallback(() => dispatch({ type: 'resetMenuToggled' }), []);
+
+  const persistNow = useCallback(() => {
+    persist(repoRef.current ?? GitEngine.vacio(), historyRef.current);
+  }, [persist]);
+
+  // Install the debug API once and route calls through a ref to the latest
+  // handlers: `run`/`loadRepo` change identity whenever `choreo` does, and
+  // reinstalling `window.GitPlayground` on every render is needless churn.
+  const debugHandlersRef = useRef({ run, loadRepo });
+  useLayoutEffect(() => {
+    debugHandlersRef.current = { run, loadRepo };
+  });
+  useEffect(() => {
+    return installDebugApi(window, {
+      getRepo: () => repoRef.current,
+      run: (comando) => debugHandlersRef.current.run(comando),
+      loadRepo: (estado) => debugHandlersRef.current.loadRepo(estado),
+    });
+  }, []);
+
+  return {
+    state,
+    run,
+    resolveConflict,
+    openEditor,
+    simulateTeammate,
+    saveFile,
+    setEditorText,
+    closeEditor,
+    loadRepo,
+    setInput,
+    historyPrev,
+    historyNext,
+    completeInput,
+    setResolverHidden,
+    toggleResetMenu,
+    clearLines,
+    persistNow,
+  };
+}
