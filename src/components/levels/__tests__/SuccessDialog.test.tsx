@@ -41,7 +41,7 @@ describe('SuccessDialog', () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Repetir' }));
     expect(onRepeat).toHaveBeenCalledTimes(1);
-    await user.click(screen.getByRole('button', { name: 'Mapa' }));
+    await user.click(screen.getByRole('button', { name: 'Volver al mapa' }));
     expect(onBackToMap).toHaveBeenCalledTimes(1);
   });
 
@@ -73,5 +73,25 @@ describe('SuccessDialog', () => {
     expect(screen.getByRole('dialog')).toHaveFocus();
     await user.keyboard('{Escape}');
     expect(screen.getByTestId('outside')).toHaveFocus();
+  });
+
+  it('shows the run stats: commands used against the budget and hints used', () => {
+    render(
+      <SuccessDialog stars={2} count={9} budget={7} hintsUsed={0} onNext={vi.fn()} nextDisabled={false} onRepeat={vi.fn()} onBackToMap={vi.fn()} />,
+    );
+    expect(screen.getByLabelText('Comandos: 9 de 7')).toBeInTheDocument();
+    expect(screen.getByLabelText('Pistas usadas: 0')).toBeInTheDocument();
+  });
+
+  it('counts a shown solution in the hints stat', () => {
+    render(
+      <SuccessDialog stars={1} count={3} budget={7} hintsUsed={1} solutionShown onNext={vi.fn()} nextDisabled={false} onRepeat={vi.fn()} onBackToMap={vi.fn()} />,
+    );
+    expect(screen.getByLabelText('Pistas usadas: 1 + solución')).toBeInTheDocument();
+  });
+
+  it('names the completed level when given its title', () => {
+    render(<SuccessDialog stars={3} levelTitle="Tu primer commit" onNext={vi.fn()} nextDisabled={false} onRepeat={vi.fn()} onBackToMap={vi.fn()} />);
+    expect(screen.getByText('Tu primer commit')).toBeInTheDocument();
   });
 });

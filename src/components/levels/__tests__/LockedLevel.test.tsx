@@ -13,4 +13,10 @@ describe('LockedLevel', () => {
     expect(screen.getByRole('heading', { name: /nivel bloqueado/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /mapa/i })).toHaveAttribute('href', '#/niveles');
   });
+
+  it('names the locked level and how to unlock it when given', () => {
+    render(<LockedLevel title="Crea una rama" hint="Completa Básicos para desbloquear" />);
+    expect(screen.getByText('Crea una rama')).toBeInTheDocument();
+    expect(screen.getByText('Completa Básicos para desbloquear')).toBeInTheDocument();
+  });
 });

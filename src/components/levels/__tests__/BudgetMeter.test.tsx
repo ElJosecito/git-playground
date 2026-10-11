@@ -23,4 +23,26 @@ describe('BudgetMeter', () => {
     render(<BudgetMeter count={8} budget={7} />);
     expect(screen.getByText('8 / 7')).toHaveAttribute('data-over-budget', 'true');
   });
+
+  it('projects 3 stars while within budget and no hint was used', () => {
+    render(<BudgetMeter count={2} budget={7} hintsUsed={false} />);
+    expect(screen.getByLabelText('Proyección: 3 estrellas')).toBeInTheDocument();
+  });
+
+  it('projects 2 stars once over budget', () => {
+    render(<BudgetMeter count={8} budget={7} hintsUsed={false} />);
+    expect(screen.getByLabelText('Proyección: 2 estrellas')).toBeInTheDocument();
+  });
+
+  it('projects 1 star once a hint (or the solution) was used, regardless of budget', () => {
+    render(<BudgetMeter count={1} budget={7} hintsUsed={true} />);
+    expect(screen.getByLabelText('Proyección: 1 estrella')).toBeInTheDocument();
+  });
+
+  it('exposes the usage as a meter', () => {
+    render(<BudgetMeter count={3} budget={7} />);
+    const meter = screen.getByRole('meter');
+    expect(meter).toHaveAttribute('aria-valuenow', '3');
+    expect(meter).toHaveAttribute('aria-valuemax', '7');
+  });
 });

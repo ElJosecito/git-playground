@@ -7,7 +7,10 @@
 import { useState } from 'react';
 import { Redirect } from '../app/router/Redirect';
 import { ProgressProvider, useProgress } from '../lessons/progress/ProgressContext';
-import { getLevel, unlockMetaOf } from '../lessons/catalog';
+import { getLevel, levels, unlockMetaOf } from '../lessons/catalog';
+import { WORLD_NAMES } from '../lessons/worldNames';
+import { lockedHintFor } from '../components/levels/mapModel';
+import { accentFor } from '../components/landing/colors';
 import { LevelShell } from '../components/levels/LevelShell';
 import { LockedLevel } from '../components/levels/LockedLevel';
 
@@ -21,7 +24,15 @@ function LevelRouteBody({ id }: LevelRouteProps) {
   const level = getLevel(id);
 
   if (!level) return <Redirect to={{ name: 'levelMap' }} />;
-  if (!progress.unlocked.has(id)) return <LockedLevel />;
+  if (!progress.unlocked.has(id)) {
+    return (
+      <LockedLevel
+        title={level.title}
+        hint={lockedHintFor(level, levels, progress.unlocked, (w) => WORLD_NAMES[w] ?? `Mundo ${w}`)}
+        accent={accentFor(level.world - 1)}
+      />
+    );
+  }
 
   return <LevelShell key={`${id}:${nonce}`} level={level} onResetLevel={() => setNonce((n) => n + 1)} />;
 }

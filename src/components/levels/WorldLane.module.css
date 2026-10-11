@@ -1,32 +1,340 @@
+/* A world station on the map's history rail. Geometry (`--rail-x`,
+ * `--content-x`) comes from LevelMap's `.root`; every lane spans the
+ * content column so its node reaches the rail with
+ * `left: calc(var(--rail-x) - var(--content-x))`. */
 .lane {
-  border-inline-start: 3px solid var(--border-strong);
-  padding-inline-start: var(--space-6);
+  position: relative;
+  --accent: var(--world);
+  --accent-ink: color-mix(in srgb, var(--accent) var(--ink-mix, 100%), var(--ink-base, #fff));
+  --lane-bg: var(--surface-solid);
+}
+
+.lane[data-state='locked'] {
+  --accent: color-mix(in srgb, var(--text-muted) 70%, var(--bg-canvas));
+  --accent-ink: var(--text-secondary);
+}
+
+.node {
+  position: absolute;
+  top: 38px;
+  left: calc(var(--rail-x) - var(--content-x) - 9px);
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--accent);
+  box-shadow:
+    0 0 0 4px var(--bg-canvas),
+    0 0 24px 2px color-mix(in srgb, var(--accent) 55%, transparent);
+  z-index: 2;
+}
+
+.lane[data-state='locked'] .node,
+.lane[data-state='open'] .node {
+  background: var(--bg-canvas);
+  box-shadow: 0 0 0 4px var(--bg-canvas);
+}
+
+.lane[data-state='locked'] .node {
+  border-style: dashed;
+  border-color: var(--border-strong);
+}
+
+.lane[data-state='current'] .node::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0.55;
+}
+
+.connector {
+  position: absolute;
+  top: 46px;
+  left: calc(var(--rail-x) - var(--content-x) + 12px);
+  width: calc(var(--content-x) - var(--rail-x) - 12px);
+  height: 2px;
+  background: linear-gradient(to right, var(--accent), color-mix(in srgb, var(--accent) 30%, transparent));
+  transform-origin: left center;
+}
+
+.lane[data-state='locked'] .connector {
+  background: repeating-linear-gradient(to right, var(--border-strong) 0 5px, transparent 5px 10px);
+}
+
+/* --- card --------------------------------------------------------------- */
+.card {
+  container: lane / inline-size;
+  position: relative;
+  max-width: 920px;
+  padding: clamp(18px, 2.6vw, 28px);
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%),
+    var(--lane-bg);
+  box-shadow: var(--l-card-shadow);
+}
+
+.lane[data-state='current'] .card {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  box-shadow:
+    var(--l-card-shadow),
+    0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent),
+    0 30px 80px -40px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.lane[data-state='locked'] .card {
+  border-style: dashed;
+  border-color: var(--border-strong);
+  background:
+    repeating-linear-gradient(135deg, var(--l-well) 0 10px, transparent 10px 20px),
+    var(--lane-bg);
+  box-shadow: none;
+}
+
+.head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(14px, 2.4vw, 26px);
+  align-items: start;
+}
+
+.number {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 5.4vw, 4.2rem);
+  line-height: 0.85;
+  letter-spacing: -0.05em;
+  color: var(--accent-ink);
+}
+
+.lane[data-state='locked'] .number {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.headBody {
+  min-width: 0;
+}
+
+.label {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  margin: 0 0 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.pill,
+.starCount,
+.status {
+  padding: 1px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.pill {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent-ink);
+}
+
+.starCount {
+  color: var(--l-star, var(--warning));
+  background: color-mix(in srgb, var(--l-star, #fbbf24) 12%, transparent);
+}
+
+.starMax {
+  opacity: 0.6;
+  font-weight: 500;
+}
+
+.status {
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  color: var(--accent-ink);
+}
+
+.lane[data-state='done'] .status {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b0d12;
 }
 
 .name {
   margin: 0;
-  font-size: 15px;
+  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
   color: var(--text-primary);
 }
 
+.lane[data-state='locked'] .name {
+  color: var(--text-secondary);
+}
+
+.blurb {
+  margin: 6px 0 0;
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* Thin progress line under the header. */
+.progress {
+  position: relative;
+  display: block;
+  height: 3px;
+  margin: 18px 0 6px;
+  border-radius: 3px;
+  background: var(--hover);
+  overflow: hidden;
+}
+
+.progressFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--pct, 0%);
+  border-radius: inherit;
+  background: linear-gradient(to right, color-mix(in srgb, var(--accent) 60%, transparent), var(--accent));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+/* --- mini branch: narrow = vertical, wide = horizontal ----------------- */
 .list {
-  margin: 0;
+  position: relative;
+  margin: 8px 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
 }
 
-@media (min-width: 720px) {
+/* Vertical branch line through the dots (narrow layout only). */
+.list::before {
+  content: '';
+  position: absolute;
+  top: 24px;
+  bottom: 24px;
+  left: 16px;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent), color-mix(in srgb, var(--accent) 25%, transparent));
+}
+
+@container lane (min-width: 560px) {
   .list {
-    flex-direction: row;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-top: 14px;
   }
 
-  .list > * {
-    flex: 1 1 220px;
+  .list::before {
+    display: none;
+  }
+}
+
+.lockedHint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--hover);
+  font: 500 12.5px/1.4 var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.lockedHint svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+/* --- reveal + ambient motion (progressive enhancement) ----------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .lane[data-state='current'] .node::after {
+    animation: ring 2000ms var(--ease-out) infinite;
+  }
+
+  .lane[data-reveal] .node {
+    transition: transform 600ms var(--ease-spring);
+  }
+  .lane[data-reveal] .connector {
+    transition: transform 600ms var(--ease-out) 120ms;
+  }
+  .lane[data-reveal] .card {
+    transition:
+      opacity 600ms var(--ease-out),
+      transform 700ms var(--ease-out);
+  }
+  .lane[data-reveal] .progressFill {
+    transition: width 900ms var(--ease-out) 350ms;
+  }
+  .lane[data-reveal] .list > li {
+    transition:
+      opacity 420ms var(--ease-out) calc(220ms + var(--j, 0) * 70ms),
+      transform 420ms var(--ease-out) calc(220ms + var(--j, 0) * 70ms);
+  }
+  .list > li:nth-child(2) {
+    --j: 1;
+  }
+  .list > li:nth-child(3) {
+    --j: 2;
+  }
+  .list > li:nth-child(4) {
+    --j: 3;
+  }
+  .list > li:nth-child(5) {
+    --j: 4;
+  }
+
+  .lane[data-reveal='hidden'] .node {
+    transform: scale(0);
+  }
+  .lane[data-reveal='hidden'] .connector {
+    transform: scaleX(0);
+  }
+  .lane[data-reveal='hidden'] .card {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+  .lane[data-reveal='hidden'] .progressFill {
+    width: 0;
+  }
+  .lane[data-reveal='hidden'] .list > li {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes ring {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@media print {
+  .lane[data-reveal] * {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

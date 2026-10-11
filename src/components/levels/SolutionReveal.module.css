@@ -1,29 +1,20 @@
-.root {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.steps {
-  margin: 0;
-  padding-left: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  font: 12px/1.5 var(--font-mono);
-  color: var(--text-primary);
-}
-
 .trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   align-self: flex-start;
-  height: 28px;
-  padding: 0 var(--space-5);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
+  height: 34px;
+  padding: 0 12px 0 8px;
+  border-radius: 10px;
+  border: 1px dashed var(--border-strong);
   background: transparent;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
+  transition:
+    background-color 180ms var(--ease-out),
+    color 180ms var(--ease-out);
 }
 
 .trigger:hover {
@@ -31,36 +22,143 @@
   color: var(--text-primary);
 }
 
+.triggerIcon {
+  display: grid;
+  place-items: center;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--hover);
+  font: 700 11px/1 var(--font-mono);
+}
+
+.confirmCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--warning) 45%, var(--border));
+  background: color-mix(in srgb, var(--warning) 9%, transparent);
+}
+
 .confirmText {
   margin: 0;
-  font-size: 12px;
-  color: var(--warning);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-primary);
 }
 
 .confirmActions {
   display: flex;
-  gap: var(--space-3);
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cancel,
+.confirm {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  cursor: pointer;
 }
 
 .cancel {
-  height: 28px;
-  padding: 0 var(--space-5);
-  border-radius: var(--radius-sm);
-  border: none;
+  border: 1px solid var(--border-strong);
   background: transparent;
   color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
+}
+
+.cancel:hover {
+  background: var(--hover);
+  color: var(--text-primary);
 }
 
 .confirm {
-  height: 28px;
-  padding: 0 var(--space-5);
-  border-radius: var(--radius-sm);
   border: none;
   background: var(--warning);
   color: var(--bg-canvas);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
+  font-weight: 700;
+}
+
+.trigger:focus-visible,
+.cancel:focus-visible,
+.confirm:focus-visible {
+  outline: 2px solid var(--l-focus, var(--success));
+  outline-offset: 2px;
+}
+
+/* Terminal window. */
+.window {
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--l-term-bg, var(--surface-terminal));
+  box-shadow: var(--l-card-shadow);
+  overflow: hidden;
+}
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 28px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--hover);
+}
+
+.lights {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.lights span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--t-red);
+}
+
+.lights span:nth-child(2) {
+  background: var(--t-yellow);
+}
+
+.lights span:nth-child(3) {
+  background: var(--t-green);
+}
+
+.titleText {
+  font: 500 11px/1 var(--font-mono);
+  color: var(--text-muted);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 10px 12px 12px;
+  list-style: none;
+  font: 12.5px/1.55 var(--font-mono);
+  color: var(--text-primary);
+}
+
+.steps li {
+  display: flex;
+  gap: 8px;
+}
+
+.prompt {
+  flex: 0 0 auto;
+  color: var(--t-green);
+  font-weight: 700;
+}
+
+.action {
+  color: var(--t-cyan);
+}
+
+.action .prompt {
+  color: var(--t-cyan);
 }

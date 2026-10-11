@@ -35,4 +35,11 @@ describe('HintList', () => {
     render(<HintList hints={hints} hintsUsed={3} onRevealHint={vi.fn()} />);
     expect(screen.queryByRole('button', { name: /pista/i })).not.toBeInTheDocument();
   });
+
+  it('labels each revealed hint as a numbered card', () => {
+    render(<HintList hints={hints} hintsUsed={2} onRevealHint={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Ver siguiente pista' })).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.getByText('Pista 2 de 3')).toBeInTheDocument();
+  });
 });

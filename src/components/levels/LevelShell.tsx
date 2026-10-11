@@ -14,7 +14,9 @@ import { useLevelSession } from './useLevelSession';
 import { LessonPanel } from './LessonPanel';
 import { SuccessDialog } from './SuccessDialog';
 import { seedOf } from '../../lessons/seed';
-import { nextLevelOf } from '../../lessons/catalog';
+import { levels as catalogLevels, nextLevelOf } from '../../lessons/catalog';
+import { WORLD_NAMES } from '../../lessons/worldNames';
+import { accentFor } from '../landing/colors';
 import { evaluateLevel } from '../../engine/lessons/evaluate';
 import { computeBudget, countsLiveAction } from '../../engine/lessons/counting';
 import { computeStars } from '../../lessons/progress/stars';
@@ -57,7 +59,13 @@ export function LevelShell({ level, onResetLevel }: LevelShellProps) {
 
   const completedRef = useRef(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [earnedStars, setEarnedStars] = useState<Stars>(3);
+  const [result, setResult] = useState<{ stars: Stars; count: number; hintsUsed: number; solutionShown: boolean }>({
+    stars: 3,
+    count: 0,
+    hintsUsed: 0,
+    solutionShown: false,
+  });
+  const levelCount = useMemo(() => catalogLevels.filter((l) => l.world === level.world).length, [level.world]);
 
   const onAction = useCallback(
     (action: PlayerActionEvent) => {
@@ -103,7 +111,12 @@ export function LevelShell({ level, onResetLevel }: LevelShellProps) {
     const stars = computeStars({ hintsUsed: session.hasUsedHints, count: session.ref.current.count, budget });
     progress.recordCompletion(level.id, { stars, count: session.ref.current.count });
     progress.clearSnapshot(level.id);
-    setEarnedStars(stars);
+    setResult({
+      stars,
+      count: session.ref.current.count,
+      hintsUsed: session.ref.current.hintsUsed,
+      solutionShown: session.ref.current.solutionShown,
+    });
     setShowSuccess(true);
     // `session`/`progress`/`level`/`budget` are stable for this mount;
     // only `evaluation.solved` flipping to true should (once) trigger this.
@@ -161,11 +174,19 @@ export function LevelShell({ level, onResetLevel }: LevelShellProps) {
           }}
           onReset={handleReset}
           mapHref={MAP_HREF}
+          worldName={WORLD_NAMES[level.world]}
+          levelCount={levelCount || undefined}
         />
       </WorkspaceView>
       {showSuccess && (
         <SuccessDialog
-          stars={earnedStars}
+          stars={result.stars}
+          levelTitle={level.title}
+          count={result.count}
+          budget={budget}
+          hintsUsed={result.hintsUsed}
+          solutionShown={result.solutionShown}
+          accent={accentFor(level.world - 1)}
           onNext={() => {
             if (next) window.location.hash = `#/niveles/${next.id}`;
           }}

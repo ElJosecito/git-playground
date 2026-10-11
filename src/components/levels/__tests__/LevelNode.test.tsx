@@ -27,4 +27,9 @@ describe('LevelNode', () => {
     render(<LevelNode id="basics-01-primer-commit" title="Tu primer commit" unlocked={true} stars={null} inProgress={true} />);
     expect(screen.getByText('en curso')).toBeInTheDocument();
   });
+
+  it('marks the "next" level so the map can highlight it', () => {
+    render(<LevelNode id="basics-01-primer-commit" title="Tu primer commit" unlocked={true} stars={null} inProgress={false} isNext />);
+    expect(screen.getByRole('link', { name: /Tu primer commit/ })).toHaveAttribute('aria-current', 'step');
+  });
 });

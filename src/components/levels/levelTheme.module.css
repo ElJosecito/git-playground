@@ -1,0 +1,58 @@
+/* Shared tokens for the levels UI (map, lesson panel, success dialog,
+ * locked view) so it speaks the landing's visual language: branch-color
+ * accents, the `--hl-gradient` highlight, soft glows and terminal-window
+ * surfaces. Mirrors `LandingRoute.module.css`'s `.root` tokens (that file
+ * is landing-only and not shared). Consumers `composes: scope`. */
+.scope {
+  --font-display: Geist, system-ui, sans-serif;
+  --ink-mix: 100%;
+  --ink-base: #ffffff;
+  --l-blue: #60a5fa;
+  --l-violet: #a78bfa;
+  --l-pink: #f472b6;
+  --l-green: #34d399;
+  --l-rail-end: #22d3ee;
+  --hl-gradient: linear-gradient(100deg, #7dd3fc 0%, #a78bfa 45%, #f472b6 90%);
+  --l-term-bg: color-mix(in srgb, var(--surface-terminal) 88%, transparent);
+  --l-card-bg: color-mix(in srgb, var(--surface-solid) 82%, transparent);
+  --l-well: rgba(255, 255, 255, 0.025);
+  --l-card-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --l-window-shadow: 0 50px 100px -40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --l-glow-strength: 30%;
+  --l-star: #fbbf24;
+  --l-star-glow: rgba(251, 191, 36, 0.55);
+  --l-focus: var(--success);
+}
+
+:global(:root[data-theme='light']) .scope {
+  --ink-mix: 55%;
+  --ink-base: #000000;
+  --l-blue: #2563eb;
+  --l-violet: #7c3aed;
+  --l-pink: #db2777;
+  --l-green: #059669;
+  --l-rail-end: #0891b2;
+  --hl-gradient: linear-gradient(100deg, #2563eb 0%, #7c3aed 45%, #db2777 90%);
+  --l-term-bg: color-mix(in srgb, #ffffff 92%, transparent);
+  --l-card-bg: color-mix(in srgb, #ffffff 90%, transparent);
+  --l-well: rgba(15, 20, 30, 0.025);
+  --l-card-shadow: 0 30px 50px -34px rgba(20, 25, 40, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --l-window-shadow: 0 50px 90px -46px rgba(20, 25, 40, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --l-glow-strength: 16%;
+  --l-star: #d97706;
+  --l-star-glow: rgba(217, 119, 6, 0.35);
+}
+
+/* Visually hidden but announced. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

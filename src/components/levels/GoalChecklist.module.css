@@ -1,32 +1,167 @@
-.list {
+/* Goals as commit dots on a short vertical branch. `--accent` comes from
+ * the lesson panel (the level's world color). */
+.root {
+  --accent-ink: color-mix(in srgb, var(--accent, var(--success)) var(--ink-mix, 100%), var(--ink-base, #fff));
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  margin: 0;
+  gap: 10px;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.label {
+  font: 600 11px/1 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.count {
+  font: 700 15px/1 var(--font-sans);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.countMax {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.meter {
+  position: relative;
+  display: block;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--hover);
+  overflow: hidden;
+}
+
+.meterFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--pct, 0%);
+  border-radius: inherit;
+  background: linear-gradient(to right, color-mix(in srgb, var(--accent) 55%, transparent), var(--accent));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent);
+  transition: width 500ms var(--ease-out);
+}
+
+.list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0 0;
   padding: 0;
   list-style: none;
 }
 
+/* The branch line behind the dots. */
+.list::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 10px;
+  width: 2px;
+  background: var(--border);
+}
+
 .list li {
+  position: relative;
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
-  font-size: 13px;
-  line-height: 1.4;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 13.5px;
+  line-height: 1.45;
 }
 
 .mark {
+  position: relative;
+  z-index: 1;
   flex: 0 0 auto;
-  width: 16px;
-  text-align: center;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: var(--surface-solid);
+  box-shadow: 0 0 0 3px var(--surface-solid);
+  transition:
+    background-color 260ms var(--ease-out),
+    border-color 260ms var(--ease-out),
+    box-shadow 260ms var(--ease-out);
+}
+
+.mark svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: #0b0d12;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 14;
+  stroke-dashoffset: 14;
+}
+
+.text {
+  padding-top: 1px;
+  min-width: 0;
 }
 
 .pending {
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .done {
-  color: var(--success);
+  color: var(--text-secondary);
+}
+
+.done .text {
   text-decoration: line-through;
-  text-decoration-color: var(--border-strong);
+  text-decoration-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  text-decoration-thickness: 1.5px;
+}
+
+.done .mark {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow:
+    0 0 0 3px var(--surface-solid),
+    0 0 16px 1px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.done .mark svg {
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .done .mark {
+    animation: pop 420ms var(--ease-spring);
+  }
+  .done .mark svg {
+    transition: stroke-dashoffset 320ms var(--ease-out) 120ms;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
 }

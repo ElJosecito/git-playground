@@ -39,6 +39,15 @@ describe('LevelShell', () => {
     expect(screen.getByLabelText('3 de 3 estrellas')).toBeInTheDocument();
   });
 
+  it('the success dialog reports the run stats (commands vs budget, hints)', async () => {
+    renderLevel();
+    await runCommands(['git init', 'touch README.md', 'echo "Mi proyecto" > README.md', 'git add README.md', 'git commit -m "Primer commit"']);
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('Tu primer commit');
+    expect(screen.getByLabelText(/^Comandos: \d+ de 7$/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Pistas usadas: 0')).toBeInTheDocument();
+  });
+
   it('revealing a hint caps stars at 1, even if the solve finishes within budget', async () => {
     renderLevel();
     const user = userEvent.setup();

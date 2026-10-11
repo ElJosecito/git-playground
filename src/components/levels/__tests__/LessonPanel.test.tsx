@@ -75,4 +75,19 @@ describe('LessonPanel', () => {
     expect(onReset).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('link', { name: 'Volver al mapa' })).toHaveAttribute('href', '#/niveles');
   });
+
+  it('shows the world in a commit-style eyebrow and the level position', () => {
+    render(<LessonPanel {...props({ worldName: 'Básicos', levelCount: 5 })} />);
+    expect(screen.getByText('Básicos')).toBeInTheDocument();
+    expect(screen.getByText('Nivel 1 de 5')).toBeInTheDocument();
+  });
+
+  it('can be collapsed into a compact card (mobile sheet toggle)', async () => {
+    render(<LessonPanel {...props()} />);
+    const user = userEvent.setup();
+    const toggle = screen.getByRole('button', { name: 'Mostrar la lección' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await user.click(toggle);
+    expect(screen.getByRole('button', { name: 'Ocultar la lección' })).toHaveAttribute('aria-expanded', 'true');
+  });
 });

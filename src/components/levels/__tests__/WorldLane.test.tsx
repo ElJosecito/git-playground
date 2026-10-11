@@ -24,4 +24,31 @@ describe('WorldLane', () => {
     expect(screen.getByRole('link', { name: /Tu primer commit/ })).toBeInTheDocument();
     expect(screen.getByText('Status y stage')).toBeInTheDocument();
   });
+
+  it('summarises the world progress (levels completed and stars)', () => {
+    render(
+      <WorldLane
+        world={1}
+        name="Básicos"
+        levels={[
+          { id: 'a', title: 'Uno', unlocked: true, stars: 2, inProgress: false },
+          { id: 'b', title: 'Dos', unlocked: true, stars: null, inProgress: true },
+        ]}
+      />,
+    );
+    expect(screen.getByLabelText('Básicos: 1 de 2 niveles completados')).toBeInTheDocument();
+    expect(screen.getByLabelText('2 de 6 estrellas en este mundo')).toBeInTheDocument();
+  });
+
+  it('shows the unlock hint for a locked world', () => {
+    render(
+      <WorldLane
+        world={2}
+        name="Ramas"
+        lockedHint="Completa Básicos para desbloquear"
+        levels={[{ id: 'a', title: 'Uno', unlocked: false, stars: null, inProgress: false }]}
+      />,
+    );
+    expect(screen.getByText('Completa Básicos para desbloquear')).toBeInTheDocument();
+  });
 });

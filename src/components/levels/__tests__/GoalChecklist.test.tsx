@@ -36,4 +36,17 @@ describe('GoalChecklist', () => {
     rerender(<GoalChecklist goals={[{ id: 'a', label: 'Meta', done: false }]} />);
     expect(screen.getByRole('listitem')).toHaveAttribute('data-done', 'false');
   });
+
+  it('shows how many goals are done out of the total', () => {
+    render(
+      <GoalChecklist
+        goals={[
+          { id: 'a', label: 'Uno', done: true },
+          { id: 'b', label: 'Dos', done: false },
+          { id: 'c', label: 'Tres', done: false },
+        ]}
+      />,
+    );
+    expect(screen.getByLabelText('1 de 3 objetivos completados')).toBeInTheDocument();
+  });
 });
