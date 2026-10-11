@@ -93,4 +93,29 @@ describe('ActionBar', () => {
     await user.click(screen.getByText('Pull requests (0)'));
     expect(p.onOpenHosting).toHaveBeenCalledTimes(1);
   });
+
+  // design.md Key Decisions: "ActionBar gains optional showReset and
+  // homeHref." Both default to the sandbox's existing behavior (reset
+  // shown, no home link) so PlaygroundShell's existing tests/markup stay
+  // unedited; a future LevelShell can pass `showReset={false}
+  // homeHref="#/niveles"`.
+  it('shows the "Reiniciar repositorio" button by default (showReset omitted)', () => {
+    render(<ActionBar {...props()} />);
+    expect(screen.getByText('Reiniciar repositorio')).toBeInTheDocument();
+  });
+
+  it('omits the "Reiniciar repositorio" button when showReset is false', () => {
+    render(<ActionBar {...props({ showReset: false })} />);
+    expect(screen.queryByText('Reiniciar repositorio')).not.toBeInTheDocument();
+  });
+
+  it('renders no home link when homeHref is omitted', () => {
+    render(<ActionBar {...props()} />);
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  it('renders a home link to homeHref when provided', () => {
+    render(<ActionBar {...props({ homeHref: '#/niveles' })} />);
+    expect(screen.getByRole('link', { name: 'Inicio' })).toHaveAttribute('href', '#/niveles');
+  });
 });

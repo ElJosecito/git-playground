@@ -62,6 +62,16 @@ if (typeof SVGElement !== 'undefined' && !('getTotalLength' in SVGElement.protot
   });
 }
 
+// jsdom implements `scrollTo` as a stub that logs "Not implemented" instead
+// of actually doing nothing silently — replace it with a true no-op so
+// `RouteFrame`'s scroll management doesn't spam test output. Individual
+// tests remain free to `vi.spyOn(window, 'scrollTo')`/reassign it.
+Object.defineProperty(window, 'scrollTo', {
+  configurable: true,
+  writable: true,
+  value: () => {},
+});
+
 if (!('matchMedia' in window)) {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,

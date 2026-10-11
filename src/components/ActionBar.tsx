@@ -18,6 +18,16 @@ export interface ActionBarProps {
   showHosting: boolean;
   hostingCount: number;
   onOpenHosting(): void;
+  /** Gates the "Reiniciar repositorio" button/menu. Defaults to `true`
+   * (the sandbox's existing behavior, unchanged) — a level host passes
+   * `false` since "reset" there means `LevelShell`'s own "Reiniciar
+   * nivel", not reloading the whole repo (design.md Key Decisions:
+   * "ActionBar gains optional showReset and homeHref."). */
+  showReset?: boolean;
+  /** When provided, renders an additional "Inicio" link to this href
+   * (e.g. `#/niveles` from inside a level). Omitted entirely by default so
+   * the sandbox's markup/tests stay unchanged. */
+  homeHref?: string;
 }
 
 export function ActionBar({
@@ -32,9 +42,16 @@ export function ActionBar({
   showHosting,
   hostingCount,
   onOpenHosting,
+  showReset = true,
+  homeHref,
 }: ActionBarProps) {
   return (
     <div className={styles.bar}>
+      {homeHref && (
+        <a href={homeHref} className={styles.chip}>
+          Inicio
+        </a>
+      )}
       {showMate && (
         <button
           type="button"
@@ -54,28 +71,30 @@ export function ActionBar({
       <button type="button" onClick={onToggleTheme} aria-label="Cambiar tema" title="Cambiar tema claro/oscuro" className={`${styles.chip} ${styles.themeButton}`}>
         ◐
       </button>
-      <div className={styles.resetWrap}>
-        <button type="button" onClick={onToggleReset} className={styles.chip}>
-          Reiniciar repositorio
-        </button>
-        {resetOpen && (
-          <div className={styles.panel}>
-            <div className={styles.panelTitle}>¿Empezar de nuevo?</div>
-            <div className={styles.panelBody}>Se perderá el estado actual del repositorio.</div>
-            <button type="button" onClick={onResetExample} className={styles.option}>
-              <span className={styles.optionTitle}>Repositorio de ejemplo</span>
-              <span className={styles.optionSubtitle}>README.md y dos commits en main</span>
-            </button>
-            <button type="button" onClick={onResetEmpty} className={styles.option}>
-              <span className={styles.optionTitle}>Carpeta vacía</span>
-              <span className={styles.optionSubtitle}>Sin git init: empiezas desde cero</span>
-            </button>
-            <button type="button" onClick={onToggleReset} className={styles.cancel}>
-              Cancelar
-            </button>
-          </div>
-        )}
-      </div>
+      {showReset && (
+        <div className={styles.resetWrap}>
+          <button type="button" onClick={onToggleReset} className={styles.chip}>
+            Reiniciar repositorio
+          </button>
+          {resetOpen && (
+            <div className={styles.panel}>
+              <div className={styles.panelTitle}>¿Empezar de nuevo?</div>
+              <div className={styles.panelBody}>Se perderá el estado actual del repositorio.</div>
+              <button type="button" onClick={onResetExample} className={styles.option}>
+                <span className={styles.optionTitle}>Repositorio de ejemplo</span>
+                <span className={styles.optionSubtitle}>README.md y dos commits en main</span>
+              </button>
+              <button type="button" onClick={onResetEmpty} className={styles.option}>
+                <span className={styles.optionTitle}>Carpeta vacía</span>
+                <span className={styles.optionSubtitle}>Sin git init: empiezas desde cero</span>
+              </button>
+              <button type="button" onClick={onToggleReset} className={styles.cancel}>
+                Cancelar
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

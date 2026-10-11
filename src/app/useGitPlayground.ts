@@ -43,10 +43,29 @@ const WELCOME_RAW = [
   '',
 ];
 
-function createBootState(initialRepo?: RepoState): PlaygroundState {
+function createBootState(initialRepo?: RepoState, bootLines?: string[]): PlaygroundState {
   const base = createInitialPlaygroundState();
-  const lines = WELCOME_RAW.map((text, i) => ({ id: i + 1, segs: parseLine(text) }));
+  const lines = (bootLines ?? WELCOME_RAW).map((text, i) => ({ id: i + 1, segs: parseLine(text) }));
   return { ...base, repo: initialRepo ?? GitEngine.ejemplo(), lines, nextLineId: lines.length + 1 };
+}
+
+/** A player action, reported to `options.onAction` at the point the handler
+ * decides it counts (design.md Contracts: "PlayerAction = command | hosting
+ * {op, ok} | ui{resolve|save}"). `command` carries the raw submitted text —
+ * classifying it as read-only/counting is Phase 3's `level-engine/counting`
+ * module's job, not this hook's. */
+export type PlayerActionEvent =
+  | { kind: 'command'; text: string }
+  | { kind: 'hosting'; op: 'create' | 'comment' | 'close' | 'reopen' | 'merge'; ok: boolean }
+  | { kind: 'ui'; action: 'resolve' | 'save' };
+
+/** Phase 2 (tasks.md 2.2/2.4): lets a future level session (Phase 5) count
+ * player actions toward its command budget and boot with its own lesson
+ * lines instead of the sandbox's welcome banner. Optional and backward
+ * compatible — omitting it keeps the sandbox's exact current behavior. */
+export interface UseGitPlaygroundOptions {
+  onAction?(action: PlayerActionEvent): void;
+  bootLines?: string[];
 }
 
 export type ConflictMode = 'mia' | 'suya' | 'ambas';
@@ -117,9 +136,21 @@ export interface UseGitPlaygroundResult {
   hosting: HostingHandlers;
 }
 
-export function useGitPlayground(choreo?: ChoreographyApi, persistence?: PersistenceDeps): UseGitPlaygroundResult {
+export function useGitPlayground(
+  choreo?: ChoreographyApi,
+  persistence?: PersistenceDeps,
+  options?: UseGitPlaygroundOptions,
+): UseGitPlaygroundResult {
   const initialRepo = persistence?.initialRepo;
-  const [state, dispatch] = useReducer(playgroundReducer, undefined, () => createBootState(initialRepo));
+  const [state, dispatch] = useReducer(playgroundReducer, undefined, () => createBootState(initialRepo, options?.bootLines));
+  // Routed through a ref so `onAction` can change identity across renders
+  // (an inline arrow at the call site, say) without forcing every handler
+  // below to re-create its own `useCallback` — same convention as
+  // `debugHandlersRef` further down.
+  const onActionRef = useRef(options?.onAction);
+  useLayoutEffect(() => {
+    onActionRef.current = options?.onAction;
+  });
   const repoRef = useRef<RepoState | null>(state.repo);
   // Queue of commands whose `choreo.after()` hasn't run yet (D5's
   // after-command hook point, drained below). Needed because two
@@ -181,6 +212,14 @@ export function useGitPlayground(choreo?: ChoreographyApi, persistence?: Persist
       }
       histIdxRef.current = -1;
 
+      // Counting (design.md Key Decisions): fires for every non-empty
+      // submitted command — including `clear`/`cls`, ones the engine
+      // rejects, and ones reached via the debug API's `ejecutar()` (which
+      // routes through this same `run()`) — classifying which of those
+      // actually count toward a level's budget is Phase 3's job, not this
+      // hook's.
+      if (trimmed) onActionRef.current?.({ kind: 'command', text: trimmed });
+
       // Oracle (design-handoff/Git Playground.dc.html, line 290): the
       // `clear`/`cls` typed command calls `this.save()` with no repo arg
       // (defaults to the CURRENT, unchanged repo) — distinct from `apply()`'s
@@ -213,6 +252,7 @@ export function useGitPlayground(choreo?: ChoreographyApi, persistence?: Persist
   const resolveConflict = useCallback(
     (file: string, mode: ConflictMode) => {
       choreo?.finishAll();
+      onActionRef.current?.({ kind: 'ui', action: 'resolve' });
       const repo = repoRef.current ?? GitEngine.vacio();
       applyResult(GitEngine.resolver(repo, file, mode), null);
     },
@@ -238,6 +278,7 @@ export function useGitPlayground(choreo?: ChoreographyApi, persistence?: Persist
       const repo = repoRef.current ?? GitEngine.vacio();
       dispatch({ type: 'editorClosed' });
       choreo?.finishAll();
+      onActionRef.current?.({ kind: 'ui', action: 'save' });
       applyResult(GitEngine.escribir(repo, file, text), { kind: 'markup', text: `\x01m\x02(guardado ${file})\x03` });
     },
     [applyResult, choreo],
@@ -320,6 +361,7 @@ export function useGitPlayground(choreo?: ChoreographyApi, persistence?: Persist
     (input: CreatePullRequestInput): HostingOutcome => {
       const repo = repoRef.current ?? GitEngine.vacio();
       const res = GitEngine.createPullRequest(repo, input);
+      onActionRef.current?.({ kind: 'hosting', op: 'create', ok: !res.error });
       if (res.error) return { ok: false, lines: res.salida };
       applyResult(res, null);
       return { ok: true };
@@ -330,6 +372,7 @@ export function useGitPlayground(choreo?: ChoreographyApi, persistence?: Persist
     (id: number, body: string): HostingOutcome => {
       const repo = repoRef.current ?? GitEngine.vacio();
       const res = GitEngine.commentPullRequest(repo, id, body);
+      onActionRef.current?.({ kind: 'hosting', op: 'comment', ok: !res.error });
       if (res.error) return { ok: false, lines: res.salida };
       applyResult(res, null);
       return { ok: true };
@@ -340,6 +383,7 @@ export function useGitPlayground(choreo?: ChoreographyApi, persistence?: Persist
     (id: number): HostingOutcome => {
       const repo = repoRef.current ?? GitEngine.vacio();
       const res = GitEngine.closePullRequest(repo, id);
+      onActionRef.current?.({ kind: 'hosting', op: 'close', ok: !res.error });
       if (res.error) return { ok: false, lines: res.salida };
       applyResult(res, null);
       return { ok: true };
@@ -350,6 +394,7 @@ export function useGitPlayground(choreo?: ChoreographyApi, persistence?: Persist
     (id: number): HostingOutcome => {
       const repo = repoRef.current ?? GitEngine.vacio();
       const res = GitEngine.reopenPullRequest(repo, id);
+      onActionRef.current?.({ kind: 'hosting', op: 'reopen', ok: !res.error });
       if (res.error) return { ok: false, lines: res.salida };
       applyResult(res, null);
       return { ok: true };
@@ -360,6 +405,7 @@ export function useGitPlayground(choreo?: ChoreographyApi, persistence?: Persist
     (id: number, strategy: MergeStrategy, deleteBranch: boolean): HostingOutcome => {
       const repo = repoRef.current ?? GitEngine.vacio();
       const res = GitEngine.mergePullRequest(repo, id, strategy, deleteBranch);
+      onActionRef.current?.({ kind: 'hosting', op: 'merge', ok: !res.error });
       if (res.error) return { ok: false, lines: res.salida };
       applyResult(res, null);
       return { ok: true };

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check:chunks": "node scripts/check-chunks.mjs",
     "preview": "vite preview",
     "test": "cross-env TZ=UTC vitest run",
     "test:watch": "cross-env TZ=UTC vitest"

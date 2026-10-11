@@ -9,7 +9,7 @@ export default defineConfig({
         test: {
           name: 'node',
           environment: 'node',
-          include: ['src/engine/**/*.test.ts', 'src/app/**/*.test.ts', 'src/ui/**/*.test.ts'],
+          include: ['src/engine/**/*.test.ts', 'src/app/**/*.test.ts', 'src/ui/**/*.test.ts', 'src/lessons/**/*.test.ts'],
         },
       },
       {
@@ -18,7 +18,7 @@ export default defineConfig({
           name: 'dom',
           environment: 'jsdom',
           setupFiles: ['src/test/setup.dom.ts'],
-          include: ['src/hooks/**/*.test.ts', 'src/components/**/*.test.tsx'],
+          include: ['src/hooks/**/*.test.ts', 'src/components/**/*.test.tsx', 'src/app/**/*.test.tsx', 'src/routes/**/*.test.tsx', 'src/__tests__/**/*.test.tsx', 'src/lessons/**/*.test.tsx'],
         },
       },
     ],

@@ -6,12 +6,20 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  overflow: hidden;
   background: var(--bg-canvas);
   color: var(--text-primary);
   font-family: var(--font-sans, system-ui, sans-serif);
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
+}
+
+/* The sandbox/level shells are a fixed-viewport pan/zoom canvas (hence the
+ * oracle's unconditional `overflow: hidden`) — but the landing page
+ * (Phase 8, tasks.md) is a normal scrolling document. `LandingRoute` sets
+ * `data-scroll-page` on `<body>` for exactly as long as it's mounted, so
+ * every other route keeps the original fixed-viewport behavior unchanged. */
+body:not([data-scroll-page]) {
+  overflow: hidden;
 }
 
 a {

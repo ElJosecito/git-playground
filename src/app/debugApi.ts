@@ -34,10 +34,21 @@ export interface DebugApiTarget {
 }
 
 /** Attaches the debug API to `target` (normally `window`) and returns a
- * function that removes it again — used to clean up on unmount in tests. */
+ * function that removes it again — used to clean up on unmount in tests.
+ *
+ * Guarded cleanup (app-shell spec delta "Debug API rebinds on navigation";
+ * design.md: "The cleanup deletes only if target.GitPlayground === api."):
+ * the active ROUTE owns `window.GitPlayground`. If a newer instance (e.g.
+ * the level route, mounting as the sandbox route unmounts) has already
+ * replaced it by the time this one's cleanup runs, deleting unconditionally
+ * would wipe out that newer, still-live binding — so the uninstaller only
+ * deletes when it's still ITS OWN api installed. */
 export function installDebugApi(target: DebugApiTarget, deps: DebugApiDeps): () => void {
-  target.GitPlayground = createDebugApi(deps);
+  const api = createDebugApi(deps);
+  target.GitPlayground = api;
   return () => {
-    delete target.GitPlayground;
+    if (target.GitPlayground === api) {
+      delete target.GitPlayground;
+    }
   };
 }

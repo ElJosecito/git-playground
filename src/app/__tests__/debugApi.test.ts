@@ -47,4 +47,33 @@ describe('installDebugApi', () => {
     uninstall();
     expect(target.GitPlayground).toBeUndefined();
   });
+
+  // app-shell spec delta "Debug API rebinds on navigation": the active
+  // route owns `window.GitPlayground`. design.md Key Decisions: "Debug
+  // API: stays installed per useGitPlayground. The cleanup deletes only if
+  // target.GitPlayground === api." Without this guard, an OLDER instance
+  // unmounting AFTER a newer one has mounted (e.g. during a route
+  // transition) would wipe out the newer instance's live binding.
+  it('does NOT delete a newer api that has since replaced it (guarded cleanup)', () => {
+    const target: DebugApiTarget = {};
+    const uninstallFirst = installDebugApi(target, { getRepo: () => null, run: vi.fn(), loadRepo: vi.fn() });
+    const firstApi = target.GitPlayground;
+
+    // A second instance (e.g. the level route) mounts and takes over.
+    installDebugApi(target, { getRepo: () => null, run: vi.fn(), loadRepo: vi.fn() });
+    const secondApi = target.GitPlayground;
+    expect(secondApi).not.toBe(firstApi);
+
+    // The first instance's cleanup (its effect unmounting) must not clobber
+    // the second instance's still-live api.
+    uninstallFirst();
+    expect(target.GitPlayground).toBe(secondApi);
+  });
+
+  it('DOES delete its own api when nothing newer has replaced it', () => {
+    const target: DebugApiTarget = {};
+    const uninstall = installDebugApi(target, { getRepo: () => null, run: vi.fn(), loadRepo: vi.fn() });
+    uninstall();
+    expect(target.GitPlayground).toBeUndefined();
+  });
 });

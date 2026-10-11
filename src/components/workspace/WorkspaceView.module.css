@@ -1,0 +1,12 @@
+/* Moved from `PlaygroundShell.module.css` as part of the workspace
+ * extraction (tasks.md Phase 2) — ported from the DC template's outer
+ * wrapper (design-handoff/Git Playground.dc.html, line 25). The
+ * dotted-grid canvas background lives in `Canvas.module.css`. */
+
+.root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+}

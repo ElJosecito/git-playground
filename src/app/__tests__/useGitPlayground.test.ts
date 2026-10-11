@@ -574,4 +574,110 @@ describe('useGitPlayground', () => {
       expect(result.current.state.repo!.remote.branches.feature).toBeUndefined();
     });
   });
+
+  // Task 2.2/2.4 (tasks.md Phase 2): a 3rd, optional options param that lets
+  // a future level session (Phase 5) observe/count player actions and boot
+  // with its own lines instead of the sandbox's welcome banner. design.md
+  // Key Decisions: "Counting: onAction fires at handler entry, before
+  // engine/persist. This covers run (including failures and the debug
+  // API), hosting.*, resolveConflict and saveFile (counted 1 each, kind
+  // 'ui')." Contracts: "PlayerAction = command | hosting{op, ok} | ui
+  // {resolve|save}".
+  describe('useGitPlayground / onAction option', () => {
+    function openPrRepo(result: { current: ReturnType<typeof useGitPlayground> }): void {
+      act(() => {
+        result.current.run('git checkout -b feature');
+        result.current.run('echo hola > notas.txt');
+        result.current.run('git add notas.txt');
+        result.current.run('git commit -m feature');
+        result.current.run('git push -u origin feature');
+      });
+    }
+
+    it('fires {kind:"command", text} for every non-empty run(), including a command the engine rejects', () => {
+      const onAction = vi.fn();
+      const { result } = renderHook(() => useGitPlayground(undefined, undefined, { onAction }));
+      onAction.mockClear();
+
+      act(() => result.current.run('git status'));
+      expect(onAction).toHaveBeenCalledWith({ kind: 'command', text: 'git status' });
+
+      onAction.mockClear();
+      act(() => result.current.run('git this-command-does-not-exist'));
+      expect(onAction).toHaveBeenCalledWith({ kind: 'command', text: 'git this-command-does-not-exist' });
+    });
+
+    it('does NOT fire onAction for an empty Enter', () => {
+      const onAction = vi.fn();
+      const { result } = renderHook(() => useGitPlayground(undefined, undefined, { onAction }));
+      onAction.mockClear();
+      act(() => result.current.run(''));
+      expect(onAction).not.toHaveBeenCalled();
+    });
+
+    it('fires {kind:"hosting", op:"create", ok} for hosting.create, on both success and failure', () => {
+      const onAction = vi.fn();
+      const { result } = renderHook(() => useGitPlayground(undefined, undefined, { onAction }));
+      onAction.mockClear();
+      act(() => {
+        result.current.hosting.create({ source: 'feature', target: 'main', title: 'x', body: '' });
+      });
+      expect(onAction).toHaveBeenCalledWith({ kind: 'hosting', op: 'create', ok: false });
+
+      openPrRepo(result);
+      onAction.mockClear();
+      act(() => {
+        result.current.hosting.create({ source: 'feature', target: 'main', title: 'Mi cambio', body: '' });
+      });
+      expect(onAction).toHaveBeenCalledWith({ kind: 'hosting', op: 'create', ok: true });
+    });
+
+    it('fires {kind:"hosting", op, ok:true} for comment/close/reopen/merge on success', () => {
+      const onAction = vi.fn();
+      const { result } = renderHook(() => useGitPlayground(undefined, undefined, { onAction }));
+      openPrRepo(result);
+      act(() => {
+        result.current.hosting.create({ source: 'feature', target: 'main', title: 'Mi cambio', body: '' });
+      });
+
+      onAction.mockClear();
+      act(() => result.current.hosting.comment(1, 'hola'));
+      expect(onAction).toHaveBeenCalledWith({ kind: 'hosting', op: 'comment', ok: true });
+
+      onAction.mockClear();
+      act(() => result.current.hosting.close(1));
+      expect(onAction).toHaveBeenCalledWith({ kind: 'hosting', op: 'close', ok: true });
+
+      onAction.mockClear();
+      act(() => result.current.hosting.reopen(1));
+      expect(onAction).toHaveBeenCalledWith({ kind: 'hosting', op: 'reopen', ok: true });
+
+      onAction.mockClear();
+      act(() => result.current.hosting.merge(1, 'squash', true));
+      expect(onAction).toHaveBeenCalledWith({ kind: 'hosting', op: 'merge', ok: true });
+    });
+
+    it('fires {kind:"ui", action:"resolve"} for resolveConflict and {kind:"ui", action:"save"} for saveFile', () => {
+      const onAction = vi.fn();
+      const { result } = renderHook(() => useGitPlayground(undefined, undefined, { onAction }));
+      onAction.mockClear();
+      act(() => result.current.resolveConflict('nope.txt', 'mia'));
+      expect(onAction).toHaveBeenCalledWith({ kind: 'ui', action: 'resolve' });
+
+      onAction.mockClear();
+      act(() => result.current.saveFile('README.md', 'contenido'));
+      expect(onAction).toHaveBeenCalledWith({ kind: 'ui', action: 'save' });
+    });
+
+    it('bootLines overrides the default welcome banner when provided', () => {
+      const { result } = renderHook(() => useGitPlayground(undefined, undefined, { bootLines: ['Hola nivel'] }));
+      expect(result.current.state.lines).toHaveLength(1);
+      expect(result.current.state.lines[0]!.segs.map((s) => s.t).join('')).toContain('Hola nivel');
+    });
+
+    it('defaults to the sandbox welcome banner when bootLines is omitted', () => {
+      const { result } = renderHook(() => useGitPlayground(undefined, undefined, {}));
+      expect(result.current.state.lines).toHaveLength(3);
+    });
+  });
 });
