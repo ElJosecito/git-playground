@@ -288,6 +288,9 @@ export function useCamera({ canvasRef, envRef, reducedRef, graphRef, onMove }: U
       if (target?.closest && target.closest('[data-h],[data-label],[data-stash]')) return;
       const el = canvasRef.current;
       if (!el) return;
+      // Dragging the board must pan, never start a text selection over the
+      // graph labels or the panels around it.
+      e.preventDefault?.();
       const native = e as unknown as PointerEvent;
       try {
         el.setPointerCapture?.(native.pointerId);

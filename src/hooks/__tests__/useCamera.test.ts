@@ -200,6 +200,20 @@ describe('useCamera', () => {
     });
   });
 
+  it('onCanvasPointerDown prevents the default so dragging the board never starts a text selection', () => {
+    const { result, canvasDiv } = setup();
+    const preventDefault = vi.fn();
+    act(() => {
+      result.current.onCanvasPointerDown({ target: canvasDiv, pointerId: 3, clientX: 0, clientY: 0, preventDefault } as unknown as React.PointerEvent<HTMLDivElement>);
+    });
+    expect(preventDefault).toHaveBeenCalled();
+    act(() => {
+      const up = new MouseEvent('pointerup');
+      Object.defineProperty(up, 'pointerId', { value: 3 });
+      canvasDiv.dispatchEvent(up);
+    });
+  });
+
   it('onCanvasPointerDown ignores pointerdowns that target a commit/label/stash element', () => {
     const { result, canvasDiv } = setup();
     const commitEl = document.createElement('g');
