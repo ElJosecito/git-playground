@@ -1,62 +1,199 @@
-.section {
-  padding: clamp(32px, 6vw, 64px) clamp(20px, 6vw, 64px) clamp(32px, 6vw, 64px) clamp(48px, 9vw, 96px);
+/* Branching moment. `.branch` sits in the content column; `.lane` is pulled
+ * back onto the rail (left = rail - content) and is `--lane-gap` wide: the
+ * fork curve runs from the rail (x=0) out to the lane (x=lane-gap), the lane
+ * runs down, and the merge curve brings it back. Scroll progress `--p`
+ * (set by useScrollProgress, absent => fully drawn) scrubs each part in
+ * turn: fork 0..14%, lane 14..86%, merge 86..100%. */
+.branch {
+  position: relative;
+  margin-top: clamp(28px, 4vw, 48px);
+  --fork-h: 72px;
 }
 
-.visuallyHiddenHeading {
+.lane {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
+  top: 0;
+  bottom: 0;
+  left: calc(var(--rail-x) - var(--content-x));
+  width: var(--lane-gap);
+  pointer-events: none;
+  --stroke: var(--l-branch);
+}
+
+.fork,
+.merge {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: var(--fork-h);
+  overflow: visible;
+}
+
+.fork {
+  top: 0;
+}
+.merge {
+  bottom: 0;
+}
+
+.fork path,
+.merge path {
+  fill: none;
+  stroke: var(--stroke);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.laneTrack,
+.laneFill {
+  position: absolute;
+  top: var(--fork-h);
+  bottom: var(--fork-h);
+  left: calc(100% - 1px);
+  width: 2px;
+  border-radius: 2px;
+}
+
+.laneTrack {
+  background: color-mix(in srgb, var(--stroke) 22%, transparent);
+}
+
+.laneFill {
+  background: linear-gradient(to bottom, var(--stroke), color-mix(in srgb, var(--stroke) 70%, var(--l-pink)));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--stroke) 60%, transparent);
+  transform-origin: top center;
 }
 
 .list {
-  margin: 0;
-  padding: 0;
   list-style: none;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(28px, 4vw, 40px);
-}
-
-@media (min-width: 720px) {
-  .list {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  margin: 0;
+  padding: calc(var(--fork-h) + 8px) 0 calc(var(--fork-h) + 8px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(56px, 9vw, 120px);
 }
 
 .item {
   position: relative;
-  padding-inline-start: var(--space-7);
+  display: grid;
+  gap: clamp(18px, 3vw, 40px);
+  align-items: center;
+  --accent-ink: color-mix(in srgb, var(--accent) var(--ink-mix), var(--ink-base));
 }
 
-.dot {
+@media (min-width: 900px) {
+  .item {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  }
+  .item:nth-child(even) .copy {
+    order: 2;
+  }
+}
+
+.node {
   position: absolute;
-  inset-inline-start: -2px;
   top: 6px;
-  width: 10px;
-  height: 10px;
+  left: calc(var(--rail-x) + var(--lane-gap) - var(--content-x) - 6px);
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: var(--accent, var(--success));
+  background: var(--accent);
+  box-shadow:
+    0 0 0 4px var(--bg-canvas),
+    0 0 18px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+@media (min-width: 900px) {
+  .node {
+    top: 50%;
+    margin-top: -6px;
+  }
+}
+
+.copy {
+  max-width: 520px;
 }
 
 .hash {
-  margin: 0 0 var(--space-3);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 12px;
   font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-muted);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.hash code {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.branchName {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent-ink);
 }
 
 .title {
-  margin: 0 0 var(--space-4);
-  font-size: 1.1rem;
+  margin: 0 0 12px;
+  font-size: clamp(1.4rem, 2.6vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   font-weight: 600;
   color: var(--text-primary);
+  text-wrap: balance;
 }
 
 .body {
   margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.6;
+  font-size: 1.02rem;
+  line-height: 1.65;
   color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+.visual {
+  min-width: 0;
+}
+
+.mergeCommit {
+  margin-top: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .branch[data-scroll-live] .fork {
+    clip-path: inset(-4px -4px calc((1 - clamp(0, calc(var(--p, 1) / 0.14), 1)) * 100%) -4px);
+  }
+  .branch[data-scroll-live] .laneFill {
+    transform: scaleY(clamp(0, calc((var(--p, 1) - 0.14) / 0.72), 1));
+  }
+  .branch[data-scroll-live] .merge {
+    clip-path: inset(-4px -4px calc((1 - clamp(0, calc((var(--p, 1) - 0.86) / 0.14), 1)) * 100%) -4px);
+  }
+
+  .item[data-reveal] .copy,
+  .item[data-reveal] .visual {
+    transition:
+      opacity 800ms var(--ease-out),
+      transform 900ms var(--ease-out);
+  }
+  .item[data-reveal] .visual {
+    transition-delay: 140ms;
+  }
+  .item[data-reveal] .node {
+    transition: transform 650ms var(--ease-spring) 80ms;
+  }
+  .item[data-reveal='hidden'] .copy {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  .item[data-reveal='hidden'] .visual {
+    opacity: 0;
+    transform: translateY(40px) rotate(-1.5deg) scale(0.97);
+  }
+  .item[data-reveal='hidden'] .node {
+    transform: scale(0);
+  }
 }

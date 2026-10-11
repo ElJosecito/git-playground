@@ -1,4 +1,7 @@
-/* The hero's live graph + terminal line. CSS keyframe "births" for new
+/* The hero's live graph + terminal line. Since the landing redesign, the
+ * surrounding "window" chrome (title bar, border, shadow) is drawn by
+ * Hero.module.css's `.window`; this root is a borderless inner panel.
+ * The hero's live graph + terminal line. CSS keyframe "births" for new
  * commit nodes (design.md UI: "CSS keyframe births") ride on GraphLayer's
  * own `.node`/`.link` classes (GraphLayer.module.css) — this file only
  * owns the demo's own chrome: the sized SVG viewport, the fake terminal
@@ -9,15 +12,11 @@
   flex-direction: column;
   gap: var(--space-5);
   padding: var(--space-6);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
 }
 
 .graphWrap {
   position: relative;
-  height: 300px;
+  height: clamp(220px, 26vw, 300px);
   border-radius: var(--radius-md);
   background-image: radial-gradient(var(--bg-grid-dot) 1.1px, transparent 1.4px);
   background-size: 22px 22px;
@@ -84,7 +83,9 @@
 }
 
 .pauseButton {
-  align-self: flex-end;
+  position: absolute;
+  top: calc(var(--space-6) + 10px);
+  right: calc(var(--space-6) + 10px);
   font-family: var(--font-mono);
   font-size: 12px;
   padding: var(--space-3) var(--space-5);

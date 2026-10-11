@@ -1,66 +1,273 @@
-.section {
-  padding: clamp(32px, 6vw, 64px) clamp(20px, 6vw, 64px) clamp(32px, 6vw, 64px) clamp(48px, 9vw, 96px);
-}
-
-.heading {
-  margin: 0 0 clamp(24px, 4vw, 36px);
-  font-size: clamp(1.3rem, 2.4vw, 1.7rem);
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
 .list {
-  margin: 0;
-  padding: 0;
+  position: relative;
   list-style: none;
+  margin: clamp(36px, 6vw, 72px) 0 0;
+  padding: 0;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(24px, 4vw, 32px);
-  counter-reset: step;
+  gap: clamp(36px, 5vw, 56px) clamp(18px, 2.4vw, 32px);
 }
 
-@media (min-width: 720px) {
+@media (min-width: 900px) {
   .list {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  /* Dashed connector running behind the three step numbers. */
+  .list::before {
+    content: '';
+    position: absolute;
+    top: 27px;
+    left: 56px;
+    right: 8%;
+    border-top: 2px dashed var(--border-strong);
+    transform-origin: left center;
   }
 }
 
 .item {
   position: relative;
-  padding-inline-start: var(--space-7);
+  display: flex;
+  flex-direction: column;
+  --accent-ink: color-mix(in srgb, var(--accent) var(--ink-mix), var(--ink-base));
 }
 
-.dot {
-  position: absolute;
-  inset-inline-start: -2px;
-  top: 6px;
-  width: 10px;
-  height: 10px;
+.number {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 18px;
   border-radius: 50%;
-  background: var(--accent, var(--success));
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 26px;
+  color: var(--accent-ink);
+  background: var(--bg-canvas);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  box-shadow: 0 0 26px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
-.hash {
-  margin: 0 0 var(--space-3);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.command {
-  color: var(--accent, var(--success));
+.visual {
+  height: 156px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .title {
-  margin: 0 0 var(--space-4);
-  font-size: 1.05rem;
+  margin: 0 0 10px;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
   font-weight: 600;
+  letter-spacing: -0.025em;
   color: var(--text-primary);
 }
 
 .body {
   margin: 0;
-  font-size: 0.92rem;
+  font-size: 1rem;
   line-height: 1.6;
   color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+/* --- step 2: growing graph -------------------------------------------- */
+.grow {
+  position: relative;
+  height: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background:
+    radial-gradient(var(--bg-grid-dot) 1px, transparent 1.4px) 0 0 / 18px 18px,
+    var(--l-term-bg);
+  box-shadow: var(--l-card-shadow);
+  overflow: hidden;
+}
+
+.growLine {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 50%;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 3px;
+  background: var(--accent);
+  transform-origin: left center;
+}
+
+.growDot {
+  position: absolute;
+  top: 50%;
+  left: calc(12% + var(--k) * (76% / 3));
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 4px var(--l-term-bg),
+    0 0 16px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.growHead {
+  background: var(--l-term-bg);
+  border: 3px solid var(--head);
+}
+
+.growLabel {
+  position: absolute;
+  right: 10%;
+  top: calc(50% + 22px);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.headPill {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--head);
+  color: var(--head-ink);
+  font-weight: 600;
+}
+
+/* --- step 3: PR card --------------------------------------------------- */
+.pr {
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--l-term-bg);
+  box-shadow: var(--l-card-shadow);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pr p {
+  margin: 0;
+}
+
+.prTitle {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.prNumber {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.prRefs code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
+.prCheck {
+  color: var(--t-green);
+}
+
+.prStatus {
+  position: relative;
+  align-self: flex-start;
+  margin-top: auto;
+  display: inline-grid;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.prOpen,
+.prMerged {
+  grid-area: 1 / 1;
+  padding: 4px 12px;
+  border-radius: 999px;
+  color: #fff;
+}
+
+.prOpen {
+  background: #15803d;
+  opacity: 0;
+}
+
+.prMerged {
+  background: #7c3aed;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .list[data-reveal] .item {
+    transition:
+      opacity 700ms var(--ease-out) calc(var(--i) * 160ms),
+      transform 800ms var(--ease-out) calc(var(--i) * 160ms);
+  }
+  .list[data-reveal='hidden'] .item {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+  .list[data-reveal]::before {
+    transition: transform 1400ms var(--ease-in-out) 200ms;
+  }
+  .list[data-reveal='hidden']::before {
+    transform: scaleX(0);
+  }
+
+  .list[data-reveal='hidden'] .growLine {
+    transform: scaleX(0);
+  }
+  .list[data-reveal='hidden'] .growDot {
+    transform: scale(0);
+  }
+  .list[data-reveal='hidden'] .growLabel {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  .list[data-reveal='shown'] .growLine {
+    transition: transform 1200ms var(--ease-in-out) 500ms;
+  }
+  .list[data-reveal='shown'] .growDot {
+    transition: transform 520ms var(--ease-spring) calc(560ms + var(--k) * 300ms);
+  }
+  .list[data-reveal='shown'] .growLabel {
+    transition:
+      opacity 400ms var(--ease-out) 1700ms,
+      transform 400ms var(--ease-out) 1700ms;
+  }
+
+  /* PR: starts "Abierto", the check lands, then flips to "Fusionado". */
+  .list[data-reveal='hidden'] .prCheck {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  .list[data-reveal='hidden'] .prOpen {
+    opacity: 1;
+  }
+  .list[data-reveal='hidden'] .prMerged {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  .list[data-reveal='shown'] .prCheck {
+    transition:
+      opacity 400ms var(--ease-out) 1300ms,
+      transform 400ms var(--ease-out) 1300ms;
+  }
+  .list[data-reveal='shown'] .prOpen {
+    opacity: 0;
+    transition: opacity 250ms var(--ease-out) 2100ms;
+  }
+  .list[data-reveal='shown'] .prMerged {
+    transition:
+      opacity 300ms var(--ease-out) 2100ms,
+      transform 500ms var(--ease-spring) 2100ms;
+  }
 }

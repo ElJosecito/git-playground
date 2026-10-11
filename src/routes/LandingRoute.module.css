@@ -1,28 +1,310 @@
-/* Phase 8 (tasks.md): full "commit-log editorial" landing (design.md UI).
- * `.root` owns the page-level dotted-grid backdrop and the vertical rail
- * every section's dot sits on; each section draws its own dot + content. */
+/* Landing page shell: tokens, decorative backdrop, nav, frame and the
+ * scroll-drawn history rail.
+ *
+ * IMPORTANT: never put mask-image/opacity fades on `.root` — a mask applies
+ * to ALL content. Decorative fades live on `.backdrop` children / the rail
+ * only. */
 .root {
+  /* Geometry shared by every section (see Commit.module.css). */
+  --rail-x: clamp(20px, 4.4vw, 64px);
+  --content-x: calc(var(--rail-x) + clamp(30px, 4.6vw, 72px));
+  --lane-gap: calc((var(--content-x) - var(--rail-x)) * 0.55);
+  --gutter-end: clamp(16px, 5vw, 72px);
+
+  --font-display: Geist, system-ui, sans-serif;
+
+  /* Theme-dependent landing tokens (dark default). `--ink-*` turns a
+   * branch accent into readable text: dark = the accent itself. */
+  --ink-mix: 100%;
+  --ink-base: #ffffff;
+  --l-blue: #60a5fa;
+  --l-violet: #a78bfa;
+  --l-pink: #f472b6;
+  --l-branch: #a78bfa;
+  --l-violet-ink: #c4b5fd;
+  --l-rail-end: #22d3ee;
+  --hl-gradient: linear-gradient(100deg, #7dd3fc 0%, #a78bfa 45%, #f472b6 90%);
+  --l-term-bg: color-mix(in srgb, var(--surface-terminal) 88%, transparent);
+  --l-card-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --l-window-shadow: 0 50px 100px -40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --l-glow-strength: 30%;
+
   position: relative;
+  isolation: isolate;
   min-height: 100vh;
+  overflow-x: clip;
   color: var(--text-primary);
   background: var(--bg-canvas);
   font-family: var(--font-sans);
+  font-size: 16px;
+}
+
+:global(:root[data-theme='light']) .root {
+  --ink-mix: 55%;
+  --ink-base: #000000;
+  --l-blue: #2563eb;
+  --l-violet: #7c3aed;
+  --l-pink: #db2777;
+  --l-branch: #7c3aed;
+  --l-violet-ink: #6d28d9;
+  --l-rail-end: #0891b2;
+  --hl-gradient: linear-gradient(100deg, #2563eb 0%, #7c3aed 45%, #db2777 90%);
+  --l-term-bg: color-mix(in srgb, #ffffff 92%, transparent);
+  --l-card-shadow: 0 30px 50px -34px rgba(20, 25, 40, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --l-window-shadow: 0 50px 90px -46px rgba(20, 25, 40, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --l-glow-strength: 16%;
+}
+
+.root ::selection {
+  background: color-mix(in srgb, var(--l-violet) 40%, transparent);
+}
+
+/* --- decorative backdrop (never masks content) --------------------------- */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
   background-image: radial-gradient(var(--bg-grid-dot) 1px, transparent 1.4px);
   background-size: 28px 28px;
-  mask-image: radial-gradient(ellipse 120% 70% at 50% 0%, black 55%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 120% 70% at 50% 0%, black 55%, transparent 100%);
+  /* The fade lives HERE, on the decorative layer only. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, rgba(0, 0, 0, 0.55) 900px, rgba(0, 0, 0, 0.35) 100%);
+  mask-image: linear-gradient(to bottom, #000 0, rgba(0, 0, 0, 0.55) 900px, rgba(0, 0, 0, 0.35) 100%);
+}
+
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.glowA {
+  top: -260px;
+  right: -180px;
+  width: 900px;
+  height: 900px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--l-blue) var(--l-glow-strength), transparent), transparent);
+}
+
+.glowB {
+  top: 30%;
+  left: -320px;
+  width: 820px;
+  height: 820px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--l-violet) var(--l-glow-strength), transparent), transparent);
+}
+
+.glowC {
+  top: 68%;
+  right: -260px;
+  width: 900px;
+  height: 900px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--l-pink) var(--l-glow-strength), transparent), transparent);
+}
+
+.noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* Subtle parallax: scroll-driven CSS animation where supported; static
+ * elsewhere and under reduced motion. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .glowA,
+    .glowB,
+    .glowC,
+    .grid {
+      animation: drift linear both;
+      animation-timeline: scroll(root block);
+    }
+    .glowB {
+      animation-name: driftB;
+    }
+    .grid {
+      animation-name: gridDrift;
+    }
+  }
+}
+
+@keyframes drift {
+  to {
+    transform: translate3d(0, 55vh, 0);
+  }
+}
+@keyframes driftB {
+  to {
+    transform: translate3d(120px, -30vh, 0);
+  }
+}
+@keyframes gridDrift {
+  to {
+    transform: translate3d(0, 140px, 0);
+  }
+}
+
+/* --- nav ----------------------------------------------------------------- */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  background: color-mix(in srgb, var(--bg-canvas) 72%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+
+.navInner {
+  max-width: 1280px;
+  margin-inline: auto;
+  box-sizing: border-box;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-inline: calc(var(--rail-x) - 12px) var(--gutter-end);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--text-primary);
+}
+
+.brandMark {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: var(--l-blue);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.brandMark circle {
+  fill: var(--bg-canvas);
+}
+
+.brandDim {
+  color: var(--text-secondary);
+}
+
+.navLinks {
+  display: flex;
+  gap: 4px;
+}
+
+.navLinks a {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.navLinks a:hover {
+  color: var(--text-primary);
+  background: var(--hover);
+}
+
+.brand:focus-visible,
+.navLinks a:focus-visible {
+  outline: 2px solid var(--success);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* --- frame + history rail ------------------------------------------------ */
+.frame {
+  position: relative;
+  max-width: 1280px;
+  margin-inline: auto;
+}
+
+.history {
+  padding-bottom: 8px;
 }
 
 .rail {
   position: absolute;
-  inset-block: clamp(48px, 8.5vw, 104px) 0;
-  inset-inline-start: clamp(22px, 5.9vw, 62px);
+  top: 40px;
+  bottom: 0;
+  left: calc(var(--rail-x) - 1px);
   width: 2px;
-  background: linear-gradient(to bottom, var(--border-strong), var(--border) 85%, transparent);
+  pointer-events: none;
+  z-index: 1;
 }
 
-@media (max-width: 719px) {
-  .rail {
-    display: none;
+.railTrack,
+.railFill {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+}
+
+.railTrack {
+  background: linear-gradient(to bottom, transparent, var(--border-strong) 80px, var(--border-strong));
+}
+
+.railFill {
+  background: linear-gradient(
+    to bottom,
+    transparent 0,
+    var(--l-blue) 80px,
+    var(--l-violet) 30%,
+    #34d399 55%,
+    var(--l-pink) 78%,
+    var(--l-rail-end) 100%
+  );
+  box-shadow: 0 0 12px color-mix(in srgb, var(--l-blue) 45%, transparent);
+}
+
+/* The glowing read-head; only exists while scroll scrubbing is live. */
+.railHead {
+  display: none;
+  position: absolute;
+  top: -5px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--head);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--l-blue) 50%, transparent),
+    0 0 24px 6px color-mix(in srgb, var(--l-blue) 70%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Clip (not scale) so each gradient colour stays pinned to its place
+   * in the page's history while the line draws. */
+  .rail[data-scroll-live] .railFill {
+    clip-path: inset(0 -12px calc((1 - var(--p, 1)) * 100%) -12px);
+  }
+  .rail[data-scroll-live] .railHead {
+    display: block;
+    transform: translateY(var(--p-px, 0px));
   }
 }

@@ -1,0 +1,145 @@
+.term {
+  position: relative;
+  border-radius: 12px;
+  background: var(--l-term-bg);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--l-card-shadow);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+}
+
+.dots {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.dots i:first-child {
+  background: #f87171;
+}
+.dots i:nth-child(2) {
+  background: #fbbf24;
+}
+.dots i:nth-child(3) {
+  background: #4ade80;
+}
+
+.title {
+  margin-inline: auto;
+  transform: translateX(-24px);
+}
+
+.body {
+  padding: 12px 14px 14px;
+  color: var(--text-primary);
+}
+
+.line {
+  display: flex;
+  gap: 8px;
+  min-height: 1.7em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.prompt {
+  color: var(--t-green);
+  font-weight: 600;
+  flex: none;
+}
+
+.typed,
+.text {
+  display: inline-block;
+}
+
+.out {
+  color: var(--text-secondary);
+}
+.ok {
+  color: var(--t-green);
+}
+.err {
+  color: var(--t-red);
+}
+.marker {
+  color: var(--t-yellow);
+}
+.mine {
+  color: var(--t-cyan);
+}
+.theirs {
+  color: var(--l-violet-ink);
+}
+
+/* Final (static) look of a resolved line; the motion block below replays
+ * the resolution when revealed. */
+.resolve .text {
+  opacity: 0.42;
+  text-decoration: line-through;
+}
+
+@media (prefers-reduced-motion: no-preference) and (min-width: 480px) {
+  .typed {
+    white-space: pre;
+    overflow: hidden;
+    vertical-align: top;
+  }
+
+  [data-reveal='hidden'] .typed {
+    max-width: 0;
+  }
+  [data-reveal='hidden'] .prompt,
+  [data-reveal='hidden'] .text {
+    opacity: 0;
+  }
+  [data-reveal='hidden'] .text {
+    transform: translateY(4px);
+  }
+
+  [data-reveal='shown'] .typed {
+    max-width: calc((var(--n) + 1) * 1ch);
+    transition: max-width calc(var(--n) * 32ms) steps(var(--n), end) var(--d);
+  }
+  [data-reveal='shown'] .prompt {
+    transition: opacity 120ms linear var(--d);
+  }
+  [data-reveal='shown'] .text {
+    transition:
+      opacity 260ms var(--ease-out) var(--d),
+      transform 260ms var(--ease-out) var(--d),
+      color 400ms var(--ease-out),
+      text-decoration-color 400ms var(--ease-out);
+  }
+
+  [data-reveal='shown'] .resolve .text {
+    opacity: 1;
+    text-decoration-color: transparent;
+    animation: resolveDim 520ms var(--ease-out) var(--end) forwards;
+  }
+}
+
+@keyframes resolveDim {
+  to {
+    opacity: 0.42;
+    text-decoration-color: currentColor;
+  }
+}

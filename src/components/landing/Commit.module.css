@@ -1,0 +1,201 @@
+/* Shared "commit entry" styling for every landing section. Geometry comes
+ * from custom properties defined once on LandingRoute's `.root`:
+ *   --rail-x     x of the history rail (from the frame's left edge)
+ *   --content-x  x where section content starts
+ * Every section spans the full frame width, so anything inside the content
+ * column reaches the rail with `left: calc(var(--rail-x) - var(--content-x))`.
+ *
+ * All "hidden" (pre-reveal) styles live inside
+ * `@media (prefers-reduced-motion: no-preference)` AND behind the
+ * `[data-reveal='hidden']` attribute that only JS sets — content is never
+ * hidden without both. */
+
+.section {
+  position: relative;
+  padding-block: clamp(56px, 8vw, 112px) clamp(32px, 5vw, 64px);
+  padding-inline: var(--content-x) var(--gutter-end);
+  scroll-margin-top: 72px;
+}
+
+.header {
+  position: relative;
+  max-width: 900px;
+  --accent-ink: color-mix(in srgb, var(--accent) var(--ink-mix), var(--ink-base));
+}
+
+.eyebrow {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0 0 clamp(14px, 2vw, 22px);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+
+.node {
+  position: absolute;
+  top: 3px;
+  left: calc(var(--rail-x) - var(--content-x) - 7px);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 4px var(--bg-canvas),
+    0 0 0 5px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 0 22px 2px color-mix(in srgb, var(--accent) 45%, transparent);
+  z-index: 2;
+}
+
+.node::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0;
+}
+
+.stub {
+  position: absolute;
+  top: 10px;
+  left: calc(var(--rail-x) - var(--content-x) + 11px);
+  width: calc(var(--content-x) - var(--rail-x) - 19px);
+  border-top: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.hash {
+  color: var(--accent-ink);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.message {
+  color: var(--text-secondary);
+}
+
+/* Section headings: big, tight, expressive; an <em> inside switches to the
+ * bold Geist with a branch-colored gradient. */
+.title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: clamp(2.1rem, 5.6vw, 4.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.title em {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  padding-inline-end: 0.06em;
+  background: var(--hl-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lead {
+  margin: clamp(16px, 2.4vw, 26px) 0 0;
+  max-width: 600px;
+  font-size: clamp(1.02rem, 1.5vw, 1.2rem);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .header[data-reveal] .node {
+    transition:
+      transform 700ms var(--ease-spring),
+      opacity 300ms var(--ease-out);
+  }
+  .header[data-reveal] .stub {
+    transform-origin: left center;
+    transition: transform 500ms var(--ease-out) 180ms;
+  }
+  .header[data-reveal] .hash,
+  .header[data-reveal] .tag,
+  .header[data-reveal] .message {
+    transition:
+      opacity 500ms var(--ease-out),
+      transform 600ms var(--ease-out);
+  }
+  .header[data-reveal] .tag {
+    transition-delay: 120ms;
+  }
+  .header[data-reveal] .message {
+    transition-delay: 200ms;
+  }
+  .header[data-reveal] .title,
+  .header[data-reveal] .lead {
+    transition:
+      opacity 800ms var(--ease-out) 160ms,
+      transform 900ms var(--ease-out) 160ms,
+      filter 800ms var(--ease-out) 160ms;
+  }
+  .header[data-reveal] .lead {
+    transition-delay: 300ms;
+  }
+
+  .header[data-reveal='hidden'] .node {
+    transform: scale(0);
+    opacity: 0;
+  }
+  .header[data-reveal='hidden'] .stub {
+    transform: scaleX(0);
+  }
+  .header[data-reveal='hidden'] .hash,
+  .header[data-reveal='hidden'] .tag,
+  .header[data-reveal='hidden'] .message {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  .header[data-reveal='hidden'] .title,
+  .header[data-reveal='hidden'] .lead {
+    opacity: 0;
+    transform: translateY(32px);
+    filter: blur(8px);
+  }
+
+  .header[data-reveal='shown'] .node::after {
+    animation: ring 1100ms var(--ease-out) 250ms 1 both;
+  }
+}
+
+@keyframes ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@media print {
+  [data-reveal] * {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}

@@ -4,6 +4,9 @@ import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import App from '../App';
 
+// The landing route's (only) h1 — the redesigned hero headline.
+const LANDING_H1 = 'Aprende Git sin miedo a romper nada.';
+
 // app-routing spec: the app root becomes a route switch (app-shell delta
 // "Route Switch Owns the App Root"). Covers: no-hash = landing, deep link
 // into #/playground, deep link into #/niveles, and the unknown-hash
@@ -21,7 +24,7 @@ describe('App routing', () => {
 
   it('shows the landing page when there is no hash', async () => {
     render(<App />);
-    expect(await screen.findByRole('heading', { level: 1, name: 'Git Playground' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: LANDING_H1 })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Empezar niveles' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Modo libre' })).toBeInTheDocument();
   });
@@ -50,13 +53,13 @@ describe('App routing', () => {
   it('redirects an unknown hash to the landing page via history replace', async () => {
     window.location.hash = '#/no-existe';
     render(<App />);
-    expect(await screen.findByRole('heading', { level: 1, name: 'Git Playground' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: LANDING_H1 })).toBeInTheDocument();
     expect(window.location.hash).toBe('#/');
   });
 
   it('is wrapped in the app-level ThemeProvider (boots dark by default)', async () => {
     render(<App />);
-    await screen.findByRole('heading', { level: 1, name: 'Git Playground' });
+    await screen.findByRole('heading', { level: 1, name: LANDING_H1 });
     expect(document.documentElement.dataset.theme).toBe('dark');
   });
 
@@ -66,7 +69,7 @@ describe('App routing', () => {
         <App />
       </StrictMode>,
     );
-    const heading = await screen.findByRole('heading', { level: 1, name: 'Git Playground' });
+    const heading = await screen.findByRole('heading', { level: 1, name: LANDING_H1 });
     expect(document.activeElement).not.toBe(heading);
   });
 
@@ -76,7 +79,7 @@ describe('App routing', () => {
         <App />
       </StrictMode>,
     );
-    await screen.findByRole('heading', { level: 1, name: 'Git Playground' });
+    await screen.findByRole('heading', { level: 1, name: LANDING_H1 });
     window.location.hash = '#/niveles';
     const heading = await screen.findByRole('heading', { level: 1, name: 'Mapa de niveles' });
     expect(document.activeElement).toBe(heading);

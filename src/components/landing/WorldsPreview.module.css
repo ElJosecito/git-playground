@@ -1,98 +1,190 @@
-.section {
-  position: relative;
-  padding: clamp(32px, 6vw, 64px) clamp(20px, 6vw, 64px) clamp(32px, 6vw, 64px) clamp(48px, 9vw, 96px);
-}
-
-.dot {
-  position: absolute;
-  inset-inline-start: clamp(16px, 5.5vw, 56px);
-  top: clamp(36px, 6.5vw, 70px);
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--accent, var(--success));
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent, var(--success)) 25%, transparent);
-}
-
-.hash {
-  margin: 0 0 var(--space-4);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.heading {
-  margin: 0 0 var(--space-5);
-  font-size: clamp(1.3rem, 2.4vw, 1.7rem);
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.lead {
-  margin: 0 0 clamp(28px, 4vw, 40px);
-  max-width: 560px;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: var(--text-secondary);
-}
-
-.grid {
-  margin: 0;
-  padding: 0;
+/* Stations on the main rail. Each `.station` spans the content column; its
+ * node is pulled back onto the rail, and a connector runs from the rail to
+ * the card. On wide screens cards zig-zag (even stations shift right by
+ * `--shift`) so the journey reads as a path rather than a list. */
+.journey {
   list-style: none;
+  margin: clamp(40px, 6vw, 72px) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(22px, 3.4vw, 40px);
+}
+
+.station {
+  position: relative;
+  --shift: 0%;
+  --accent-ink: color-mix(in srgb, var(--accent) var(--ink-mix), var(--ink-base));
+}
+
+@media (min-width: 1000px) {
+  .station:nth-child(even) {
+    --shift: 34%;
+  }
+}
+
+.node {
+  position: absolute;
+  top: 34px;
+  left: calc(var(--rail-x) - var(--content-x) - 9px);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  background: var(--accent);
+  border: 3px solid var(--accent);
+  box-shadow:
+    0 0 0 4px var(--bg-canvas),
+    0 0 24px 2px color-mix(in srgb, var(--accent) 55%, transparent);
+  z-index: 2;
+}
+
+.connector {
+  position: absolute;
+  top: 42px;
+  left: calc(var(--rail-x) - var(--content-x) + 12px);
+  width: calc(var(--content-x) - var(--rail-x) - 12px + var(--shift));
+  height: 2px;
+  background: linear-gradient(to right, var(--accent), color-mix(in srgb, var(--accent) 30%, transparent));
+  transform-origin: left center;
+}
+
+.card {
+  position: relative;
+  margin-inline-start: var(--shift);
+  max-width: 720px;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-6);
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(14px, 2.4vw, 28px);
+  padding: clamp(18px, 2.6vw, 28px);
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%),
+    var(--surface);
+  box-shadow: var(--l-card-shadow);
 }
 
-@media (min-width: 720px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
+@media (min-width: 1000px) {
+  .card {
+    max-width: 66%;
   }
 }
 
-@media (min-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.number {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 700;
+  font-size: clamp(2.8rem, 6vw, 4.6rem);
+  line-height: 0.85;
+  color: var(--accent-ink);
+  letter-spacing: -0.04em;
 }
 
-.world {
-  border: 1px solid var(--border);
-  border-inline-start: 3px solid var(--accent, var(--border-strong));
-  border-radius: var(--radius-md);
-  padding: var(--space-5) var(--space-6);
-  background: var(--surface);
+.cardBody {
+  min-width: 0;
 }
 
 .worldLabel {
-  margin: 0 0 var(--space-4);
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin: 0 0 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
 }
 
-.worldNumber {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--accent, var(--text-muted));
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.count {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent-ink);
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .worldName {
-  font-size: 1rem;
+  margin: 0 0 14px;
+  font-size: clamp(1.3rem, 2.4vw, 1.75rem);
   font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   color: var(--text-primary);
 }
 
 .levels {
+  list-style: none;
   margin: 0;
   padding: 0;
-  list-style: none;
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  font-size: 0.85rem;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.levels li {
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--hover);
+  font-size: 12.5px;
   color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .station[data-reveal] .node {
+    transition:
+      background-color 400ms var(--ease-out),
+      box-shadow 500ms var(--ease-out),
+      transform 600ms var(--ease-spring);
+  }
+  .station[data-reveal] .connector {
+    transition: transform 700ms var(--ease-out) 120ms;
+  }
+  .station[data-reveal] .card {
+    transition:
+      opacity 600ms var(--ease-out),
+      transform 700ms var(--ease-out),
+      border-color 500ms var(--ease-out);
+  }
+  .station[data-reveal] .levels li {
+    transition:
+      opacity 400ms var(--ease-out) calc(200ms + var(--j, 0) * 60ms),
+      transform 400ms var(--ease-out) calc(200ms + var(--j, 0) * 60ms);
+  }
+  .levels li:nth-child(2) {
+    --j: 1;
+  }
+  .levels li:nth-child(3) {
+    --j: 2;
+  }
+  .levels li:nth-child(4) {
+    --j: 3;
+  }
+  .levels li:nth-child(5) {
+    --j: 4;
+  }
+
+  /* Unlit: hollow node, no connector, card dimmed and slightly behind. */
+  .station[data-reveal='hidden'] .node {
+    background: var(--bg-canvas);
+    border-color: var(--border-strong);
+    box-shadow: 0 0 0 4px var(--bg-canvas);
+    transform: scale(0.8);
+  }
+  .station[data-reveal='hidden'] .connector {
+    transform: scaleX(0);
+  }
+  .station[data-reveal='hidden'] .card {
+    opacity: 0.5;
+    transform: translateX(-14px) scale(0.985);
+    border-color: var(--border);
+  }
+  .station[data-reveal='hidden'] .levels li {
+    opacity: 0.4;
+    transform: translateY(6px);
+  }
 }
