@@ -1,0 +1,20 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 12px;
+}
+
+.label {
+  color: var(--text-muted);
+}
+
+.count {
+  font: 600 12px var(--font-mono);
+  color: var(--text-primary);
+}
+
+.over {
+  font: 600 12px var(--font-mono);
+  color: var(--warning);
+}
