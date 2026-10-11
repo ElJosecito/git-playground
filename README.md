@@ -43,7 +43,7 @@ npm run check:chunks # verifica que la landing no cargue el motor
 
 ## Contribuir
 
-¡Las contribuciones son bienvenidas! Algunas ideas: niveles nuevos, comandos de Git que faltan, mejoras de accesibilidad, traducciones, bugs.
+¡Las contribuciones son bienvenidas! Algunas ideas: niveles nuevos, comandos de Git que faltan, mejoras de accesibilidad, traducciones, bugs. Lee la [guía de contribución](CONTRIBUTING.md) y el [código de conducta](CODE_OF_CONDUCT.md); para problemas de seguridad, mira [SECURITY.md](SECURITY.md).
 
 1. Abre un issue contando qué quieres cambiar (para cambios grandes, antes de programar).
 2. Haz un fork, crea una rama y escribe **primero el test** que falla, después el código.

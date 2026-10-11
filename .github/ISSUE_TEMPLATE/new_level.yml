@@ -1,0 +1,59 @@
+name: Proponer un nivel
+description: Una idea para un nivel o ejercicio nuevo.
+labels: [level]
+body:
+  - type: dropdown
+    id: mundo
+    attributes:
+      label: Mundo
+      options:
+        - 1 · Básicos
+        - 2 · Ramas
+        - 3 · Merge y conflictos
+        - 4 · Deshacer cambios
+        - 5 · Remoto
+        - 6 · Pull requests y colaboración
+        - Un mundo nuevo
+    validations:
+      required: true
+  - type: input
+    id: titulo
+    attributes:
+      label: Título del nivel
+      placeholder: Recuperar un commit con reflog
+    validations:
+      required: true
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Qué aprende la persona
+      description: El objetivo en una o dos frases.
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Estado inicial (setup)
+      description: Los comandos que preparan el repo antes de empezar.
+      render: shell
+  - type: textarea
+    id: solucion
+    attributes:
+      label: Solución de referencia
+      description: Los comandos que resuelven el nivel. Sin hashes literales (usa ramas, HEAD~n o tags).
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: objetivos
+    attributes:
+      label: Objetivos verificables
+      description: Qué se comprueba en el estado final, uno por línea.
+      placeholder: |
+        La rama actual es main
+        main tiene 3 commits
+  - type: textarea
+    id: pistas
+    attributes:
+      label: Pistas
+      description: De menos a más, de un empujón a casi la respuesta.

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Reportar una vulnerabilidad
+    url: https://github.com/ElJosecito/git-playground/security/advisories/new
+    about: Para problemas de seguridad, usa el reporte privado en lugar de un issue público.

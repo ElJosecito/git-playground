@@ -1,0 +1,50 @@
+name: Reportar un bug
+description: Algo no funciona como esperabas.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ¡Gracias por avisar! El motor es determinista: con los comandos exactos casi siempre podemos reproducirlo.
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducirlo
+      description: Los comandos que escribiste, en orden. Si fue en un nivel, indica cuál.
+      placeholder: |
+        git init
+        touch a.txt
+        git add a.txt
+        git commit -m "a"
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Qué esperabas que pasara
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Qué pasó en cambio
+      description: Copia la salida de la terminal o agrega una captura.
+    validations:
+      required: true
+  - type: dropdown
+    id: donde
+    attributes:
+      label: Dónde
+      options:
+        - Modo libre (playground)
+        - Un nivel
+        - Pull requests (web de origin)
+        - Landing
+        - Otro
+    validations:
+      required: true
+  - type: input
+    id: navegador
+    attributes:
+      label: Navegador y sistema
+      placeholder: Chrome 140 en macOS

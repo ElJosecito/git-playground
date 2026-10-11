@@ -1,0 +1,28 @@
+name: Proponer una mejora
+description: Un comando que falta, una idea para la UI o algo nuevo.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qué problema resuelve
+      description: Qué te costó, te faltó o te confundió.
+    validations:
+      required: true
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Tu propuesta
+      description: Cómo te imaginas que debería funcionar.
+    validations:
+      required: true
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas que consideraste
+  - type: checkboxes
+    id: ayuda
+    attributes:
+      label: ¿Te gustaría implementarlo?
+      options:
+        - label: Sí, puedo abrir un PR
