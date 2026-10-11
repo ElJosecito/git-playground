@@ -1,0 +1,28 @@
+/* Phase 8 (tasks.md): full "commit-log editorial" landing (design.md UI).
+ * `.root` owns the page-level dotted-grid backdrop and the vertical rail
+ * every section's dot sits on; each section draws its own dot + content. */
+.root {
+  position: relative;
+  min-height: 100vh;
+  color: var(--text-primary);
+  background: var(--bg-canvas);
+  font-family: var(--font-sans);
+  background-image: radial-gradient(var(--bg-grid-dot) 1px, transparent 1.4px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 120% 70% at 50% 0%, black 55%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 120% 70% at 50% 0%, black 55%, transparent 100%);
+}
+
+.rail {
+  position: absolute;
+  inset-block: clamp(48px, 8.5vw, 104px) 0;
+  inset-inline-start: clamp(22px, 5.9vw, 62px);
+  width: 2px;
+  background: linear-gradient(to bottom, var(--border-strong), var(--border) 85%, transparent);
+}
+
+@media (max-width: 719px) {
+  .rail {
+    display: none;
+  }
+}

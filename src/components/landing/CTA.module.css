@@ -1,0 +1,76 @@
+.commit {
+  position: relative;
+  padding: clamp(40px, 7vw, 80px) clamp(20px, 6vw, 64px) clamp(56px, 9vw, 112px) clamp(48px, 9vw, 96px);
+}
+
+.dot {
+  position: absolute;
+  inset-inline-start: clamp(16px, 5.5vw, 56px);
+  top: clamp(48px, 7.5vw, 90px);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--head);
+  box-shadow: 0 0 0 4px var(--hover);
+}
+
+.hash {
+  margin: 0 0 var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.branchTag {
+  padding: 2px var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--hover);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.title {
+  margin: 0 0 clamp(24px, 4vw, 36px);
+  font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) clamp(20px, 3vw, 28px);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.primary:hover,
+.secondary:hover {
+  transform: translateY(-1px);
+}
+
+.primary {
+  background: var(--success);
+  color: var(--head-ink);
+}
+
+.secondary {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+}

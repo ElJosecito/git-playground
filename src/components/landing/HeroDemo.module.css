@@ -1,0 +1,105 @@
+/* The hero's live graph + terminal line. CSS keyframe "births" for new
+ * commit nodes (design.md UI: "CSS keyframe births") ride on GraphLayer's
+ * own `.node`/`.link` classes (GraphLayer.module.css) — this file only
+ * owns the demo's own chrome: the sized SVG viewport, the fake terminal
+ * line, the static reduced-motion script list, and the pause control. */
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.graphWrap {
+  position: relative;
+  height: 300px;
+  border-radius: var(--radius-md);
+  background-image: radial-gradient(var(--bg-grid-dot) 1.1px, transparent 1.4px);
+  background-size: 22px 22px;
+  background-color: var(--bg-canvas);
+  overflow: hidden;
+}
+
+.terminal {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--surface-terminal);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4) var(--space-5);
+  min-height: 1.6em;
+}
+
+.terminalLine {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.prompt {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.cursor {
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  margin-inline-start: 2px;
+  vertical-align: text-bottom;
+  background: var(--text-secondary);
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.scriptList {
+  margin: 0;
+  padding-inline-start: var(--space-7);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.srSummary {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.pauseButton {
+  align-self: flex-end;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-solid);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.pauseButton:hover {
+  background: var(--hover);
+}
+
+.pauseButton:focus-visible {
+  outline: 2px solid var(--success);
+  outline-offset: 2px;
+}
