@@ -2,6 +2,25 @@
   "name": "git-playground",
   "private": true,
   "version": "0.1.0",
+  "description": "Aprende Git en el navegador: un simulador de Git real con grafo animado, niveles guiados y pull requests simulados.",
+  "license": "MIT",
+  "author": "ElJosecito",
+  "homepage": "https://eljosecito.github.io/git-playground/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ElJosecito/git-playground.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ElJosecito/git-playground/issues"
+  },
+  "keywords": [
+    "git",
+    "learn-git",
+    "education",
+    "simulator",
+    "react",
+    "typescript"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",

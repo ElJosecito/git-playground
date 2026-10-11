@@ -58,7 +58,7 @@ TerminalWindow ─run(text)─► useGitPlayground (handlers)
 
 ## File Changes
 
-All files are new, under `/Users/josecito/code/gitPlayground/`. `design-handoff/**` is unchanged.
+All files are new, under the repository root. `design-handoff/**` is unchanged.
 
 ```
 index.html  package.json  tsconfig.json  tsconfig.app.json  tsconfig.node.json
