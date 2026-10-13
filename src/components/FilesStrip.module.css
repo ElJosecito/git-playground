@@ -152,6 +152,161 @@
   padding: 2px 6px;
 }
 
+/* File-management buttons ("+ Nuevo archivo" / "Editar" / "Renombrar" /
+ * "Borrar" — students shouldn't need touch/mv/rm/edit in the terminal).
+ * `.wdRow` wraps each working-directory `.chip` with its action row as a
+ * SIBLING (never a child of `.chip` itself, so the chip's own measured box
+ * stays exactly what the fly-animation choreography expects). */
+.wdRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fileActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 0 4px;
+}
+
+.fileActionButton,
+.fileActionButtonDanger {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: 10px var(--font-sans);
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+
+.fileActionButton:hover,
+.fileActionButton:focus-visible,
+.fileActionButtonDanger:hover,
+.fileActionButtonDanger:focus-visible {
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
+.fileActionButtonDanger:hover,
+.fileActionButtonDanger:focus-visible {
+  color: var(--danger);
+}
+
+.newFileRow {
+  padding: 4px 4px 0;
+}
+
+.newFileButton {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: 500 11px var(--font-sans);
+  color: var(--text-secondary);
+  padding: 3px 4px;
+  border-radius: 4px;
+}
+
+.newFileButton:hover,
+.newFileButton:focus-visible {
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
+.inlineForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+}
+
+.inlineInput {
+  flex: 1;
+  min-width: 70px;
+  font: 11px var(--font-mono);
+  color: var(--text-primary);
+  background: var(--surface-terminal);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 2px 5px;
+}
+
+.inlineInput:focus-visible {
+  outline: 2px solid var(--t-cyan);
+  outline-offset: 1px;
+}
+
+.inlineConfirm,
+.inlineCancel {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+.inlineConfirm:hover,
+.inlineConfirm:focus-visible {
+  background: var(--hover);
+  color: var(--success);
+}
+
+.inlineCancel:hover,
+.inlineCancel:focus-visible {
+  background: var(--hover);
+  color: var(--danger);
+}
+
+.inlineError {
+  width: 100%;
+  font-size: 10px;
+  color: var(--danger);
+  padding: 1px 4px;
+}
+
+.confirmRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+}
+
+.confirmText {
+  font-size: 10px;
+  color: var(--text-secondary);
+  flex: 1;
+  min-width: 0;
+}
+
+.confirmYes,
+.confirmNo {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: 500 10px var(--font-sans);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+.confirmYes:hover,
+.confirmYes:focus-visible {
+  background: var(--hover);
+  color: var(--danger);
+}
+
+.confirmNo:hover,
+.confirmNo:focus-visible {
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
 .mobileButton {
   position: absolute;
   left: 12px;

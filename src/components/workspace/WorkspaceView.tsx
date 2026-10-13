@@ -9,6 +9,7 @@ import { Canvas } from '../Canvas';
 import { GraphLayer } from '../GraphLayer';
 import { CameraControls } from '../CameraControls';
 import { FilesStrip } from '../FilesStrip';
+import type { FileActionResult } from '../FilesStrip';
 import { ToastStack } from '../ToastStack';
 import { Tooltip } from '../Tooltip';
 import { ConflictResolver } from '../ConflictResolver';
@@ -21,7 +22,23 @@ import { TerminalWindow } from '../TerminalWindow';
 import { HostingView } from '../hosting/HostingView';
 import type { UseWorkspaceResult } from './useWorkspace';
 import { NO_LEAVING_LABELS } from './useWorkspace';
+import { parseLine } from '../../ui/markup';
 import styles from './WorkspaceView.module.css';
+
+/** Decodes a `HostingOutcome`-shaped engine error (`lines`, markup-encoded)
+ * into the plain Spanish text `FilesStrip`'s inline error UI expects — the
+ * panel is a pure renderer and shouldn't need to know about the engine's
+ * `\x01kind\x02text\x03` wire format. */
+function plainTextOf(lines: string[]): string {
+  return lines
+    .map((line) => parseLine(line).map((seg) => seg.t).join(''))
+    .join(' ')
+    .trim();
+}
+
+function toFileActionResult(outcome: { ok: true } | { ok: false; lines: string[] }): FileActionResult {
+  return outcome.ok ? { ok: true } : { ok: false, error: plainTextOf(outcome.lines) };
+}
 
 export interface EmptyStateCopy {
   notInited: { title: string; text: string };
@@ -90,6 +107,10 @@ export function WorkspaceView({ ws, toolbar, emptyState = DEFAULT_EMPTY_STATE, c
         mobileShown={ws.stripMobile}
         onToggle={ws.onToggleStrip}
         onShowMobile={ws.onShowMobileStrip}
+        onCreateFile={(name) => toFileActionResult(ws.playground.createFile(name))}
+        onRenameFile={(from, to) => toFileActionResult(ws.playground.renameFile(from, to))}
+        onDeleteFile={(name) => toFileActionResult(ws.playground.deleteFile(name))}
+        onEditFile={ws.playground.openEditor}
       />
 
       {toolbar}

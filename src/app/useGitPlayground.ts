@@ -116,6 +116,19 @@ export interface UseGitPlaygroundResult {
   saveFile(file: string, text: string): void;
   setEditorText(text: string): void;
   closeEditor(): void;
+  /** FilesStrip panel buttons ("+ Nuevo archivo" / "Renombrar" / "Borrar" —
+   * students shouldn't need touch/mv/rm to manage files). Same
+   * error/ok shape as `hosting.*` (HostingOutcome): on success, applies
+   * silently through `applyResult(res, null)` — no terminal echo, and the
+   * underlying engine functions never produce `salida` on success either,
+   * so nothing lands in the terminal; on error, `applyResult` is skipped
+   * (repo untouched) and the engine's markup-encoded error lines are handed
+   * back for the panel's inline error display. Deliberately does NOT fire
+   * `onAction` — unlike resolveConflict/saveFile, a button-driven file
+   * change must never consume a level's command budget. */
+  createFile(name: string): HostingOutcome;
+  renameFile(from: string, to: string): HostingOutcome;
+  deleteFile(name: string): HostingOutcome;
   loadRepo(repo: RepoState, notice?: string): void;
   setInput(value: string): void;
   historyPrev(): void;
@@ -287,6 +300,42 @@ export function useGitPlayground(
   const setEditorText = useCallback((text: string) => dispatch({ type: 'editorChanged', text }), []);
   const closeEditor = useCallback(() => dispatch({ type: 'editorClosed' }), []);
 
+  const createFile = useCallback(
+    (name: string): HostingOutcome => {
+      choreo?.finishAll();
+      const repo = repoRef.current ?? GitEngine.vacio();
+      const res = GitEngine.crearArchivo(repo, name);
+      if (res.error) return { ok: false, lines: res.salida };
+      applyResult(res, null);
+      return { ok: true };
+    },
+    [applyResult, choreo],
+  );
+
+  const renameFile = useCallback(
+    (from: string, to: string): HostingOutcome => {
+      choreo?.finishAll();
+      const repo = repoRef.current ?? GitEngine.vacio();
+      const res = GitEngine.renombrarArchivo(repo, from, to);
+      if (res.error) return { ok: false, lines: res.salida };
+      applyResult(res, null);
+      return { ok: true };
+    },
+    [applyResult, choreo],
+  );
+
+  const deleteFile = useCallback(
+    (name: string): HostingOutcome => {
+      choreo?.finishAll();
+      const repo = repoRef.current ?? GitEngine.vacio();
+      const res = GitEngine.borrarArchivo(repo, name);
+      if (res.error) return { ok: false, lines: res.salida };
+      applyResult(res, null);
+      return { ok: true };
+    },
+    [applyResult, choreo],
+  );
+
   const loadRepo = useCallback(
     (repo: RepoState, notice?: string) => {
       choreo?.finishAll();
@@ -441,6 +490,9 @@ export function useGitPlayground(
     saveFile,
     setEditorText,
     closeEditor,
+    createFile,
+    renameFile,
+    deleteFile,
     loadRepo,
     setInput,
     historyPrev,

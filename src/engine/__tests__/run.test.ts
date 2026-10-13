@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ejecutar, ejemplo, escribir, resolver } from '../run';
+import { ejecutar, ejemplo, escribir, resolver, crearArchivo, renombrarArchivo, borrarArchivo } from '../run';
 
 describe('run (ejecutar/ejemplo/escribir/resolver + unaOrden dispatch, ported from git-engine.js)', () => {
   beforeEach(() => {
@@ -117,6 +117,93 @@ describe('run (ejecutar/ejemplo/escribir/resolver + unaOrden dispatch, ported fr
       s.op = { kind: 'merge', other: 'x', otherName: 'x', conflicts: ['README.md'], data: { 'README.md': { ours: 'mine', theirs: 'theirs' } }, msg: 'm', origW: {}, origI: {} };
       const res = resolver(s, 'README.md', 'mia');
       expect(res.estado.files['README.md']).toBe('mine');
+    });
+  });
+
+  // New pure entry points for the FilesStrip panel buttons ("+ Nuevo
+  // archivo" / "Renombrar" / "Borrar") — same envolver envelope as
+  // escribir/resolver above, so button-driven file changes get the exact
+  // same CommandResult shape (estado/salida/eventos/error) as a typed
+  // touch/mv/rm, and diffEventos emits the same file-created/file-deleted/
+  // file-modified events a shell command would. Unlike shell's touch/mv,
+  // these reject a duplicate/existing destination name outright instead of
+  // silently overwriting — the panel buttons need an explicit error to show
+  // the student, not silent data loss.
+  describe('crearArchivo', () => {
+    it('creates an empty file via the envolver envelope and emits file-created', () => {
+      const s = ejemplo();
+      const res = crearArchivo(s, 'notas.txt');
+      expect(res.error).toBe(false);
+      expect(res.estado.files['notas.txt']).toBe('');
+      expect(res.eventos).toContainEqual({ type: 'file-created', file: 'notas.txt' });
+    });
+
+    it('rejects an invalid name', () => {
+      const s = ejemplo();
+      const res = crearArchivo(s, 'bad name!');
+      expect(res.error).toBe(true);
+      expect(res.estado).toBe(s);
+    });
+
+    it('rejects a duplicate name', () => {
+      const s = ejemplo();
+      const res = crearArchivo(s, 'README.md');
+      expect(res.error).toBe(true);
+      expect(res.salida.join('\n')).toContain('README.md');
+    });
+  });
+
+  describe('renombrarArchivo', () => {
+    it('renames a file, preserving its content, and emits file-created + file-deleted', () => {
+      const s = ejemplo();
+      const res = renombrarArchivo(s, 'README.md', 'LEEME.md');
+      expect(res.error).toBe(false);
+      expect(res.estado.files['LEEME.md']).toBe(s.files['README.md']);
+      expect(res.estado.files['README.md']).toBeUndefined();
+      expect(res.eventos).toContainEqual({ type: 'file-created', file: 'LEEME.md' });
+      expect(res.eventos).toContainEqual({ type: 'file-deleted', file: 'README.md' });
+    });
+
+    it('rejects when the source file does not exist', () => {
+      const s = ejemplo();
+      const res = renombrarArchivo(s, 'no-existe.txt', 'otro.txt');
+      expect(res.error).toBe(true);
+    });
+
+    it('rejects an invalid destination name', () => {
+      const s = ejemplo();
+      const res = renombrarArchivo(s, 'README.md', 'bad name!');
+      expect(res.error).toBe(true);
+    });
+
+    it('rejects a destination name that already exists', () => {
+      const s = escribir(ejemplo(), 'otro.txt', 'x').estado;
+      const res = renombrarArchivo(s, 'README.md', 'otro.txt');
+      expect(res.error).toBe(true);
+      expect(res.salida.join('\n')).toContain('otro.txt');
+    });
+
+    it('no-ops cleanly when the destination is the same as the source', () => {
+      const s = ejemplo();
+      const res = renombrarArchivo(s, 'README.md', 'README.md');
+      expect(res.error).toBe(false);
+      expect(res.estado.files['README.md']).toBe(s.files['README.md']);
+    });
+  });
+
+  describe('borrarArchivo', () => {
+    it('deletes a file and emits file-deleted', () => {
+      const s = ejemplo();
+      const res = borrarArchivo(s, 'README.md');
+      expect(res.error).toBe(false);
+      expect(res.estado.files['README.md']).toBeUndefined();
+      expect(res.eventos).toContainEqual({ type: 'file-deleted', file: 'README.md' });
+    });
+
+    it('rejects when the file does not exist', () => {
+      const s = ejemplo();
+      const res = borrarArchivo(s, 'no-existe.txt');
+      expect(res.error).toBe(true);
     });
   });
 });
