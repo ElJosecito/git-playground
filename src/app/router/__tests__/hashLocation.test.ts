@@ -29,6 +29,19 @@ describe('parseRoute', () => {
     expect(parseRoute('#/niveles/basics-01-primer-commit')).toEqual({ name: 'level', id: 'basics-01-primer-commit' });
   });
 
+  it('parses "#/cheatsheet" as the cheatsheet route', () => {
+    expect(parseRoute('#/cheatsheet')).toEqual({ name: 'cheatsheet' });
+  });
+
+  it('parses "#/roadmap" as the roadmap route', () => {
+    expect(parseRoute('#/roadmap')).toEqual({ name: 'roadmap' });
+    expect(parseRoute('#/roadmap/x')).toEqual({ name: 'unknown', fallback: 'landing' });
+  });
+
+  it('parses "#/cheatsheet" with extra segments as unknown, falling back to landing', () => {
+    expect(parseRoute('#/cheatsheet/x')).toEqual({ name: 'unknown', fallback: 'landing' });
+  });
+
   it('parses an unrecognized top-level hash as unknown, falling back to landing', () => {
     expect(parseRoute('#/no-existe')).toEqual({ name: 'unknown', fallback: 'landing' });
   });
@@ -43,8 +56,16 @@ describe('parseRoute', () => {
 });
 
 describe('buildHash', () => {
+  it('builds "#/cheatsheet" for the cheatsheet route', () => {
+    expect(buildHash({ name: 'cheatsheet' })).toBe('#/cheatsheet');
+  });
+
+  it('builds "#/roadmap" for the roadmap route', () => {
+    expect(buildHash({ name: 'roadmap' })).toBe('#/roadmap');
+  });
+
   it('round-trips every concrete route through parseRoute', () => {
-    const routes = [{ name: 'landing' as const }, { name: 'playground' as const }, { name: 'levelMap' as const }, { name: 'level' as const, id: 'x1' }];
+    const routes = [{ name: 'landing' as const }, { name: 'playground' as const }, { name: 'levelMap' as const }, { name: 'level' as const, id: 'x1' }, { name: 'cheatsheet' as const }, { name: 'roadmap' as const }];
     for (const route of routes) {
       expect(parseRoute(buildHash(route))).toEqual(route);
     }

@@ -1,0 +1,196 @@
+/* "Lo que viene" page shell. Same git language as the landing and the
+ * cheatsheet: dotted grid, a soft glow, `main` as the history rail down the
+ * left, and each upcoming feature as an unmerged (dashed) branch forking off
+ * it. Branch-colour tokens come from the shared levels theme scope. */
+.root {
+  composes: scope from '../components/levels/levelTheme.module.css';
+
+  --rail-x: clamp(20px, 4.4vw, 64px);
+  --content-x: calc(var(--rail-x) + clamp(26px, 4vw, 56px));
+  --gutter-end: clamp(16px, 5vw, 72px);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  overflow-x: clip;
+  color: var(--text-primary);
+  background: var(--bg-canvas);
+  font-family: var(--font-sans);
+  font-size: 16px;
+}
+
+/* --- decorative backdrop (never masks content) --------------------------- */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--bg-grid-dot) 1px, transparent 1.4px);
+  background-size: 28px 28px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, rgba(0, 0, 0, 0.4) 700px, rgba(0, 0, 0, 0.25) 100%);
+  mask-image: linear-gradient(to bottom, #000 0, rgba(0, 0, 0, 0.4) 700px, rgba(0, 0, 0, 0.25) 100%);
+}
+
+.glow {
+  position: absolute;
+  top: -280px;
+  left: -200px;
+  width: 820px;
+  height: 820px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--l-blue) var(--l-glow-strength), transparent), transparent);
+}
+
+/* --- frame + main rail --------------------------------------------------- */
+.frame {
+  position: relative;
+  max-width: 1080px;
+  margin-inline: auto;
+  padding: 0 var(--gutter-end) clamp(48px, 8vw, 96px) var(--content-x);
+}
+
+.rail {
+  position: absolute;
+  top: 48px;
+  bottom: 0;
+  left: calc(var(--rail-x) - 1px);
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, transparent, var(--l-blue) 80px, var(--l-blue) 70%, transparent);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* --- hero ---------------------------------------------------------------- */
+.hero {
+  position: relative;
+  padding-block: clamp(40px, 7vw, 88px) clamp(24px, 4vw, 40px);
+}
+
+.eyebrow {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0 0 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+
+.headNode {
+  position: absolute;
+  top: 3px;
+  left: calc(var(--rail-x) - var(--content-x) - 7px);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--head);
+  box-shadow:
+    0 0 0 4px var(--bg-canvas),
+    0 0 0 5px color-mix(in srgb, var(--l-blue) 55%, transparent),
+    0 0 22px 2px color-mix(in srgb, var(--l-blue) 45%, transparent);
+}
+
+.hash {
+  color: color-mix(in srgb, var(--l-blue) var(--ink-mix), var(--ink-base));
+  font-weight: 600;
+}
+
+.title {
+  margin: 0;
+  font-weight: 600;
+  font-size: clamp(2.2rem, 6vw, 4.2rem);
+  line-height: 1;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.title:focus {
+  outline: none;
+}
+
+.lead {
+  margin: 18px 0 0;
+  max-width: 620px;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+.lead code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--text-primary);
+}
+
+/* --- unmerged branches --------------------------------------------------- */
+.branches {
+  display: grid;
+  gap: clamp(20px, 3vw, 28px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each feature forks off `main`: a commit node on the rail and a dashed
+ * connector to the card, never merged back. */
+.fork {
+  position: relative;
+}
+
+.fork::before {
+  content: '';
+  position: absolute;
+  top: 30px;
+  left: calc(var(--rail-x) - var(--content-x));
+  width: calc(var(--content-x) - var(--rail-x));
+  border-top: 2px dashed color-mix(in srgb, var(--l-violet) 60%, transparent);
+}
+
+.fork::after {
+  content: '';
+  position: absolute;
+  top: 25px;
+  left: calc(var(--rail-x) - var(--content-x) - 6px);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--bg-canvas);
+  box-shadow: 0 0 0 2px var(--l-blue);
+}
+
+/* --- note ---------------------------------------------------------------- */
+.note {
+  margin: clamp(32px, 5vw, 48px) 0 0;
+  color: var(--text-secondary);
+}
+
+.note a {
+  color: var(--text-primary);
+  text-underline-offset: 3px;
+}
+
+.note a:focus-visible {
+  outline: 2px solid var(--l-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root *::before,
+  .root *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

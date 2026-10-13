@@ -118,4 +118,16 @@ describe('ActionBar', () => {
     render(<ActionBar {...props({ homeHref: '#/niveles' })} />);
     expect(screen.getByRole('link', { name: 'Inicio' })).toHaveAttribute('href', '#/niveles');
   });
+
+  it('renders an SVG moon in light theme and a sun in dark theme, with a descriptive title', () => {
+    const { rerender } = render(<ActionBar {...props({ theme: 'light' })} />);
+    let btn = screen.getByRole('button', { name: 'Cambiar tema' });
+    expect(btn).toHaveAttribute('title', 'Cambiar a tema oscuro');
+    expect(btn.querySelector('svg[data-icon="moon"]')).not.toBeNull();
+    expect(btn).not.toHaveTextContent('◐');
+    rerender(<ActionBar {...props({ theme: 'dark' })} />);
+    btn = screen.getByRole('button', { name: 'Cambiar tema' });
+    expect(btn).toHaveAttribute('title', 'Cambiar a tema claro');
+    expect(btn.querySelector('svg[data-icon="sun"]')).not.toBeNull();
+  });
 });

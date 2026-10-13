@@ -1,0 +1,166 @@
+/* `--accent` is set inline per category from the shared level/landing
+ * branch tokens; `--rail-x` / `--content-x` come from CheatsheetRoute. */
+.category {
+  position: relative;
+  padding-block: clamp(28px, 4vw, 48px) 0;
+  --accent-ink: color-mix(in srgb, var(--accent) var(--ink-mix), var(--ink-base));
+  scroll-margin-top: 80px;
+}
+
+.header {
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.node {
+  position: absolute;
+  top: 3px;
+  left: calc(var(--rail-x) - var(--content-x) - 7px);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 4px var(--bg-canvas),
+    0 0 0 5px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 0 18px 2px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.branch {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+
+.branch code {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.description {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 14px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-top: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--l-card-bg);
+  box-shadow: var(--l-card-shadow);
+}
+
+.command {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.command code {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.summary {
+  margin: 0;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.explanation {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.shortcuts {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--l-well);
+  border: 1px dashed var(--border);
+}
+
+.shortcutsLabel {
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.shortcuts ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shortcuts code {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.footer {
+  margin-top: auto;
+  padding-top: 4px;
+  font-size: 13px;
+}
+
+.try {
+  font-weight: 500;
+  color: var(--success);
+  text-decoration: none;
+}
+
+.try:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.try:focus-visible {
+  outline: 2px solid var(--l-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.offline {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}

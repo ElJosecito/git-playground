@@ -21,13 +21,13 @@
 // `global.css`'s `body { overflow: hidden }` is scoped off via
 // `data-scroll-page` for exactly as long as this route is mounted.
 import { useEffect, useRef } from 'react';
-import { preloadLevelMap, preloadPlayground } from '../app/router/routes';
 import { useScrollProgress } from '../hooks/useScrollProgress';
 import { Hero } from '../components/landing/Hero';
 import { Features } from '../components/landing/Features';
 import { HowItWorks } from '../components/landing/HowItWorks';
 import { WorldsPreview } from '../components/landing/WorldsPreview';
 import { CTA } from '../components/landing/CTA';
+import { SiteNav } from '../components/landing/SiteNav';
 import styles from './LandingRoute.module.css';
 
 function HistoryRail() {
@@ -54,34 +54,6 @@ function Backdrop() {
   );
 }
 
-function LandingNav() {
-  return (
-    <nav className={styles.nav} aria-label="Principal">
-      <div className={styles.navInner}>
-        <a href="#/" className={styles.brand}>
-          <svg viewBox="0 0 24 24" className={styles.brandMark} aria-hidden="true">
-            <path d="M6 4v16M6 9c0 4 12 2 12 7" />
-            <circle cx="6" cy="4" r="2.4" />
-            <circle cx="6" cy="20" r="2.4" />
-            <circle cx="18" cy="17" r="2.4" />
-          </svg>
-          <span>
-            git<span className={styles.brandDim}>/</span>playground
-          </span>
-        </a>
-        <div className={styles.navLinks}>
-          <a href="#/niveles" onMouseEnter={() => preloadLevelMap()} onFocus={() => preloadLevelMap()}>
-            Niveles
-          </a>
-          <a href="#/playground" onMouseEnter={() => preloadPlayground()} onFocus={() => preloadPlayground()}>
-            Playground
-          </a>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
 export function LandingRoute() {
   useEffect(() => {
     document.body.setAttribute('data-scroll-page', 'true');
@@ -93,7 +65,7 @@ export function LandingRoute() {
   return (
     <main className={styles.root}>
       <Backdrop />
-      <LandingNav />
+      <SiteNav />
       <div className={`${styles.frame} ${styles.history}`}>
         <HistoryRail />
         <Hero />

@@ -4,13 +4,15 @@
 // extraction... Existing PlaygroundShell tests stay green"), so a future
 // `LevelShell` (Phase 5) can compose the exact same workspace with its own
 // persistence/onAction/bootLines instead of forking this component.
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PersistenceDeps } from '../app/useGitPlayground';
 import { ThemeProvider, useAppTheme } from '../app/theme/ThemeProvider';
 import { usePersistence } from '../hooks/usePersistence';
 import { ActionBar } from './ActionBar';
 import { useWorkspace } from './workspace/useWorkspace';
 import { WorkspaceView } from './workspace/WorkspaceView';
+import { CheatsheetPanel, CHEATSHEET_PANEL_ID } from './playground/CheatsheetPanel';
+import { useCheatsheetToggleShortcut } from './playground/useCheatsheetToggleShortcut';
 import { GitEngine } from '../engine';
 import type { RepoState } from '../engine/types';
 
@@ -63,6 +65,7 @@ function PlaygroundShellBody() {
   };
 
   const ws = useWorkspace({ persistence: persistenceDeps });
+  const cheatsheet = useCheatsheetPanel(ws);
 
   return (
     <WorkspaceView
@@ -73,6 +76,7 @@ function PlaygroundShellBody() {
           mateLabel={ws.view.mobile ? 'Compañero' : 'Simular cambio de un compañero en origin'}
           onMate={ws.playground.simulateTeammate}
           onToggleTheme={onToggleTheme}
+          theme={theme}
           resetOpen={ws.playground.state.resetOpen}
           onToggleReset={ws.playground.toggleResetMenu}
           onResetExample={() => ws.playground.loadRepo(GitEngine.ejemplo(), RESET_EXAMPLE_NOTICE)}
@@ -80,8 +84,78 @@ function PlaygroundShellBody() {
           showHosting={ws.hostingVisible}
           hostingCount={ws.hostingCount}
           onOpenHosting={ws.hostingView.openView}
+          onToggleCheatsheet={cheatsheet.toggle}
+          cheatsheetOpen={cheatsheet.open}
+          cheatsheetPanelId={CHEATSHEET_PANEL_ID}
+          cheatsheetButtonRef={cheatsheet.buttonRef}
         />
       }
-    />
+    >
+      {cheatsheet.open && <CheatsheetPanel onClose={cheatsheet.close} onUse={cheatsheet.use} />}
+    </WorkspaceView>
   );
+}
+
+// Matches the first `<placeholder>` so it can be selected after insertion
+// and the user types straight over it.
+const PLACEHOLDER = /<[^>]+>/;
+
+/** Open state, focus return, and "Usar" → terminal input wiring for the
+ * sandbox cheatsheet panel. */
+function useCheatsheetPanel(ws: ReturnType<typeof useWorkspace>) {
+  const [open, setOpen] = useState(false);
+  const [focusRequest, setFocusRequest] = useState(0);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const { setInput } = ws.playground;
+  const { min, toggleMin } = ws.term;
+  const mobile = ws.view.mobile;
+
+  const restoreFocus = useCallback(() => {
+    const target = returnFocusRef.current;
+    returnFocusRef.current = null;
+    (target?.isConnected ? target : buttonRef.current)?.focus({ preventScroll: true });
+  }, []);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    restoreFocus();
+  }, [restoreFocus]);
+
+  const toggle = useCallback(() => {
+    if (open) {
+      close();
+      return;
+    }
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setOpen(true);
+  }, [open, close]);
+
+  const use = useCallback(
+    (command: string) => {
+      setInput(command);
+      if (min) toggleMin();
+      // On mobile the sheet covers the terminal, so get out of the way.
+      if (mobile) setOpen(false);
+      returnFocusRef.current = null;
+      setFocusRequest((n) => n + 1);
+    },
+    [setInput, min, toggleMin, mobile],
+  );
+
+  useCheatsheetToggleShortcut(toggle);
+
+  // Runs after the inserted text is committed to the terminal input.
+  useEffect(() => {
+    if (!focusRequest) return;
+    const input = ws.termWindowRef.current?.querySelector<HTMLInputElement>('input');
+    if (!input) return;
+    input.focus({ preventScroll: true });
+    const match = PLACEHOLDER.exec(input.value);
+    const start = match ? match.index : input.value.length;
+    input.setSelectionRange(start, match ? start + match[0].length : start);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusRequest]);
+
+  return { open, toggle, close, use, buttonRef };
 }

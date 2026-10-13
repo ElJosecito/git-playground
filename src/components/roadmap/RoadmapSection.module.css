@@ -1,0 +1,59 @@
+.section {
+  --tone: var(--warning);
+  position: relative;
+  padding: 20px 22px;
+  border: 1px dashed color-mix(in srgb, var(--tone) 55%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--tone) 6%, var(--l-card-bg));
+}
+
+.section[data-tone='soon'] {
+  --tone: var(--l-violet);
+}
+
+.branch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.badge {
+  padding: 1px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--tone) 50%, transparent);
+  background: color-mix(in srgb, var(--tone) 15%, transparent);
+  color: color-mix(in srgb, var(--tone) var(--ink-mix), var(--ink-base));
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.6vw, 1.8rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.body {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.body p {
+  margin: 8px 0 0;
+}
+
+.body ul {
+  margin: 10px 0 0;
+  padding-left: 1.2em;
+}
+
+.body li + li {
+  margin-top: 4px;
+}

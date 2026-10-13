@@ -32,7 +32,9 @@ describe('App routing', () => {
   it('deep links into #/playground and renders the real sandbox', async () => {
     window.location.hash = '#/playground';
     render(<App />);
-    expect(await screen.findByLabelText('Comando')).toBeInTheDocument();
+    // First import of the sandbox chunk in a cold worker transforms the whole
+    // engine + shell; under a full parallel run that can exceed findBy's 1s.
+    expect(await screen.findByLabelText('Comando', undefined, { timeout: 5000 })).toBeInTheDocument();
   });
 
   it('deep links into #/niveles and renders the level map', async () => {
@@ -48,6 +50,20 @@ describe('App routing', () => {
     window.location.hash = '#/niveles/basics-01-primer-commit';
     render(<App />);
     expect(await screen.findByRole('heading', { level: 1, name: 'Tu primer commit' })).toBeInTheDocument();
+  });
+
+  it('deep links into #/cheatsheet and renders the cheatsheet', async () => {
+    window.location.hash = '#/cheatsheet';
+    render(<App />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cheatsheet de Git' })).toBeInTheDocument();
+    expect(document.title).toBe('Git Playground — Cheatsheet');
+  });
+
+  it('deep links into #/roadmap and renders the upcoming features page', async () => {
+    window.location.hash = '#/roadmap';
+    render(<App />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Lo que viene' })).toBeInTheDocument();
+    expect(document.title).toBe('Git Playground — Lo que viene');
   });
 
   it('redirects an unknown hash to the landing page via history replace', async () => {

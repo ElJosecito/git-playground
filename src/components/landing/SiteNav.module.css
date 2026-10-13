@@ -1,0 +1,120 @@
+/* Shared top bar for the scrolling pages (landing, cheatsheet, roadmap). Geometry
+ * comes from the host page's `--rail-x` / `--gutter-end` when present so the
+ * brand mark lines up with that page's history rail. */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  background: color-mix(in srgb, var(--bg-canvas) 72%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+
+.navInner {
+  max-width: 1280px;
+  margin-inline: auto;
+  box-sizing: border-box;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-inline: calc(var(--rail-x, 20px) - 12px) var(--gutter-end, 16px);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--text-primary);
+}
+
+.brandMark {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: var(--l-blue, var(--t-cyan));
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.brandMark circle {
+  fill: var(--bg-canvas);
+}
+
+.brandDim {
+  color: var(--text-secondary);
+}
+
+.navLinks {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+.navLinks a {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.navLinks a:hover,
+.navLinks a[aria-current='page'] {
+  color: var(--text-primary);
+  background: var(--hover);
+}
+
+.brand:focus-visible,
+.navLinks a:focus-visible {
+  outline: 2px solid var(--success);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* The nav links + the wordmark don't fit a phone-width bar: tighten the
+ * links and keep the wordmark for assistive tech only (the mark stays). */
+@media (max-width: 520px) {
+  .navLinks a {
+    padding: 8px 8px;
+    font-size: 13px;
+  }
+  .brandText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* Four links at the narrowest phones: tighten further so the bar never
+ * scrolls the page sideways. */
+@media (max-width: 400px) {
+  .navInner {
+    gap: 8px;
+  }
+  .navLinks {
+    gap: 0;
+  }
+  .navLinks a {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+}
