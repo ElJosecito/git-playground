@@ -198,6 +198,83 @@ describe('HeroDemo', () => {
     expect(typedText()).toContain(textAtHide);
   });
 
+  // New behavior: hero-only "birth" entrance (HeroDemo.module.css) — a
+  // newly-appeared commit node/edge gets `data-born` for exactly the
+  // transition it appears on; a node that was already on screen does not.
+  // `HERO_SCRIPT`'s first 4 lines (`init`/`touch`/`echo`/`add`) create no
+  // node — the root commit lands after completing line index 4 (5 lines
+  // done), and it has no parent edge yet. The second commit (index 9, 10
+  // lines done) is the first one with an incoming edge to check.
+  const LINES_TO_FIRST_COMMIT = 5;
+  const LINES_TO_SECOND_COMMIT = 10;
+
+  it('marks a newly-appeared commit node with data-born, and clears it once another node appears', () => {
+    const { container } = render(<HeroDemo />);
+    act(() => {
+      vi.advanceTimersByTime(msToFinishLines(LINES_TO_FIRST_COMMIT));
+    });
+    const firstNodes = Array.from(container.querySelectorAll('[data-h]'));
+    expect(firstNodes).toHaveLength(1);
+    expect(firstNodes[0]!.hasAttribute('data-born')).toBe(true);
+    const firstHash = firstNodes[0]!.getAttribute('data-h');
+    // No parent commit yet, so there is nothing to draw an edge from.
+    expect(container.querySelector('path[data-born]')).toBeNull();
+
+    // Advance to the second commit: it has a parent edge back to the
+    // first, so both the new node AND that new edge should be marked —
+    // while the first commit's node is no longer "new".
+    act(() => {
+      vi.advanceTimersByTime(msToFinishLines(LINES_TO_SECOND_COMMIT) - msToFinishLines(LINES_TO_FIRST_COMMIT));
+    });
+    const firstNodeAfter = container.querySelector(`[data-h="${firstHash}"]`);
+    expect(firstNodeAfter).not.toBeNull();
+    expect(firstNodeAfter!.hasAttribute('data-born')).toBe(false);
+    const bornNodesNow = container.querySelectorAll('[data-h][data-born]');
+    expect(bornNodesNow).toHaveLength(1);
+    expect(bornNodesNow[0]!.getAttribute('data-h')).not.toBe(firstHash);
+    expect(container.querySelector('path[data-born]')).not.toBeNull();
+  });
+
+  it('re-marks the first commit as born again after the loop resets', () => {
+    const { container } = render(<HeroDemo />);
+    act(() => {
+      vi.advanceTimersByTime(msToFinishLines(LINES_TO_FIRST_COMMIT));
+    });
+    const firstHash = container.querySelector('[data-h]')!.getAttribute('data-h');
+
+    // Run past the rest of the script, the loop-pause, and the reset
+    // (measured from render time, not from where we already are — hence
+    // subtracting what's already elapsed), then back into the first
+    // commit of the next pass.
+    const resetAt = totalScriptTypingMs() + totalHoldMs() + 3000;
+    act(() => {
+      vi.advanceTimersByTime(resetAt - msToFinishLines(LINES_TO_FIRST_COMMIT));
+    });
+    expect(container.querySelectorAll('[data-h]')).toHaveLength(0);
+    act(() => {
+      vi.advanceTimersByTime(msToFinishLines(LINES_TO_FIRST_COMMIT) + 10);
+    });
+    const nodeAgain = container.querySelector(`[data-h="${firstHash}"]`);
+    expect(nodeAgain).not.toBeNull();
+    expect(nodeAgain!.hasAttribute('data-born')).toBe(true);
+  });
+
+  it('respects reduced motion: no node or edge is ever marked data-born', () => {
+    window.matchMedia = ((query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    const { container } = render(<HeroDemo />);
+    expect(container.querySelectorAll('[data-h]').length).toBeGreaterThan(0);
+    expect(container.querySelector('[data-born]')).toBeNull();
+  });
+
   it('pauses when scrolled off-screen and resumes when back in view', () => {
     render(<HeroDemo />);
     act(() => {

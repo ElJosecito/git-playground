@@ -26,7 +26,13 @@
   --hl-gradient: linear-gradient(100deg, #7dd3fc 0%, #a78bfa 45%, #f472b6 90%);
   --l-term-bg: color-mix(in srgb, var(--surface-terminal) 88%, transparent);
   --l-card-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  --l-window-shadow: 0 50px 100px -40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.02),
+  /* Layered and soft on purpose (several low-opacity passes, each with a
+   * modest spread-to-blur ratio) rather than one high-opacity shadow whose
+   * spread nearly cancels its blur — that shape fades out abruptly at its
+   * own edge and reads as a hard, stamped/"cut off" blob even though
+   * nothing actually clips it (see Hero.module.css's `.window` comment). */
+  --l-window-shadow: 0 10px 15px -8px rgba(0, 0, 0, 0.35), 0 30px 45px -20px rgba(0, 0, 0, 0.32),
+    0 60px 90px -30px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.02),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   --l-glow-strength: 30%;
 
@@ -52,7 +58,8 @@
   --hl-gradient: linear-gradient(100deg, #2563eb 0%, #7c3aed 45%, #db2777 90%);
   --l-term-bg: color-mix(in srgb, #ffffff 92%, transparent);
   --l-card-shadow: 0 30px 50px -34px rgba(20, 25, 40, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  --l-window-shadow: 0 50px 90px -46px rgba(20, 25, 40, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --l-window-shadow: 0 8px 12px -8px rgba(20, 25, 40, 0.1), 0 24px 36px -18px rgba(20, 25, 40, 0.12),
+    0 50px 80px -30px rgba(20, 25, 40, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.8);
   --l-glow-strength: 16%;
 }
 
