@@ -7,6 +7,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LevelShell } from '../LevelShell';
 import { ProgressProvider } from '../../../lessons/progress/ProgressContext';
+import { ThemeProvider } from '../../../app/theme/ThemeProvider';
 import { basics01PrimerCommit, basics02StatusYStage } from '../../../lessons/catalog/w1-basicos';
 import { unlockMetaOf } from '../../../lessons/catalog/index';
 
@@ -20,9 +21,11 @@ async function runCommands(commands: string[]): Promise<void> {
 
 function renderLevel(level = basics01PrimerCommit, onResetLevel = vi.fn()) {
   return render(
-    <ProgressProvider levels={unlockMetaOf()}>
-      <LevelShell level={level} onResetLevel={onResetLevel} />
-    </ProgressProvider>,
+    <ThemeProvider>
+      <ProgressProvider levels={unlockMetaOf()}>
+        <LevelShell level={level} onResetLevel={onResetLevel} />
+      </ProgressProvider>
+    </ThemeProvider>,
   );
 }
 
@@ -141,5 +144,12 @@ describe('LevelShell', () => {
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem('gitpg:levels:v1')!).completed['basics-01-primer-commit']).toBeDefined();
+  });
+
+  it('theme toggle in a level switches the app-wide theme (it used to be a no-op)', async () => {
+    renderLevel();
+    const before = document.documentElement.dataset.theme;
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Cambiar tema' }));
+    expect(document.documentElement.dataset.theme).not.toBe(before);
   });
 });

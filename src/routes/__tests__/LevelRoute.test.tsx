@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import LevelRoute from '../LevelRoute';
+import { ThemeProvider } from '../../app/theme/ThemeProvider';
 
 describe('LevelRoute', () => {
   beforeEach(() => localStorage.clear());
@@ -13,17 +14,17 @@ describe('LevelRoute', () => {
   });
 
   it('renders the level shell for an unlocked, existing level id', () => {
-    render(<LevelRoute id="basics-01-primer-commit" />);
+    render(<ThemeProvider><LevelRoute id="basics-01-primer-commit" /></ThemeProvider>);
     expect(screen.getByText('Inicializa el repositorio y haz tu primer commit.')).toBeInTheDocument();
   });
 
   it('redirects to the level map for an id that does not exist in the catalog', () => {
-    render(<LevelRoute id="no-existe" />);
+    render(<ThemeProvider><LevelRoute id="no-existe" /></ThemeProvider>);
     expect(window.location.hash).toBe('#/niveles');
   });
 
   it('renders the "Nivel bloqueado" guard for an existing but still-locked level id', () => {
-    render(<LevelRoute id="basics-02-status-y-stage" />);
+    render(<ThemeProvider><LevelRoute id="basics-02-status-y-stage" /></ThemeProvider>);
     expect(screen.getByRole('heading', { name: /nivel bloqueado/i })).toBeInTheDocument();
     expect(screen.queryByText('Agrega a.txt al stage y confírmalo con un commit.')).not.toBeInTheDocument();
   });

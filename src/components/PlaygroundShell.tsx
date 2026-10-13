@@ -76,6 +76,7 @@ function PlaygroundShellBody() {
           mateLabel={ws.view.mobile ? 'Compañero' : 'Simular cambio de un compañero en origin'}
           onMate={ws.playground.simulateTeammate}
           onToggleTheme={onToggleTheme}
+          theme={theme}
           resetOpen={ws.playground.state.resetOpen}
           onToggleReset={ws.playground.toggleResetMenu}
           onResetExample={() => ws.playground.loadRepo(GitEngine.ejemplo(), RESET_EXAMPLE_NOTICE)}

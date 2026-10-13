@@ -2,6 +2,7 @@
 // "Reiniciar repositorio" confirm menu. 1:1 port of the DC template's
 // action-bar block (design-handoff/Git Playground.dc.html, lines 88-105).
 import type { Ref } from 'react';
+import type { Theme } from '../app/theme/themeStorage';
 import styles from './ActionBar.module.css';
 
 export interface ActionBarProps {
@@ -9,6 +10,8 @@ export interface ActionBarProps {
   mateLabel: string;
   onMate(): void;
   onToggleTheme(): void;
+  /** Current theme; picks the toggle icon (moon in light, sun in dark). */
+  theme?: Theme;
   resetOpen: boolean;
   onToggleReset(): void;
   onResetExample(): void;
@@ -43,6 +46,7 @@ export function ActionBar({
   mateLabel,
   onMate,
   onToggleTheme,
+  theme,
   resetOpen,
   onToggleReset,
   onResetExample,
@@ -94,8 +98,14 @@ export function ActionBar({
           Cheatsheet
         </button>
       )}
-      <button type="button" onClick={onToggleTheme} aria-label="Cambiar tema" title="Cambiar tema claro/oscuro" className={`${styles.chip} ${styles.themeButton}`}>
-        ◐
+      <button
+        type="button"
+        onClick={onToggleTheme}
+        aria-label="Cambiar tema"
+        title={theme === 'dark' ? 'Cambiar a tema claro' : theme === 'light' ? 'Cambiar a tema oscuro' : 'Cambiar tema claro/oscuro'}
+        className={`${styles.chip} ${styles.themeButton}`}
+      >
+        {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
       </button>
       {showReset && (
         <div className={styles.resetWrap}>
@@ -122,5 +132,24 @@ export function ActionBar({
         </div>
       )}
     </div>
+  );
+}
+
+// Inline SVG icons: the old "◐" glyph is missing from Geist, so it fell back
+// to a system font and rendered misaligned/blurry depending on the OS.
+function SunIcon() {
+  return (
+    <svg data-icon="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg data-icon="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
   );
 }

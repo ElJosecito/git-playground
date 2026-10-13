@@ -9,6 +9,7 @@ import type { PersistenceDeps, PlayerActionEvent } from '../../app/useGitPlaygro
 import { useWorkspace } from '../workspace/useWorkspace';
 import { WorkspaceView } from '../workspace/WorkspaceView';
 import { ActionBar } from '../ActionBar';
+import { useAppTheme } from '../../app/theme/ThemeProvider';
 import { useProgress } from '../../lessons/progress/ProgressContext';
 import { useLevelSession } from './useLevelSession';
 import { LessonPanel } from './LessonPanel';
@@ -42,6 +43,7 @@ const LEVEL_BOOT_LINES = ['Revisa el objetivo y la lista de pasos en el panel la
 
 export function LevelShell({ level, onResetLevel }: LevelShellProps) {
   const progress = useProgress();
+  const { theme, toggle: onToggleTheme } = useAppTheme();
   const seed = useMemo(() => seedOf(level), [level.id, level.version]);
   const budget = useMemo(() => computeBudget(level), [level]);
   const snapshot = progress.snapshotFor(level.id, level.version);
@@ -140,7 +142,8 @@ export function LevelShell({ level, onResetLevel }: LevelShellProps) {
             showMate={false}
             mateLabel=""
             onMate={() => {}}
-            onToggleTheme={() => {}}
+            onToggleTheme={onToggleTheme}
+            theme={theme}
             resetOpen={false}
             onToggleReset={() => {}}
             onResetExample={() => {}}
