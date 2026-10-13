@@ -57,6 +57,13 @@ describe('App routing', () => {
     expect(document.title).toBe('Git Playground — Cheatsheet');
   });
 
+  it('deep links into #/roadmap and renders the upcoming features page', async () => {
+    window.location.hash = '#/roadmap';
+    render(<App />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Lo que viene' })).toBeInTheDocument();
+    expect(document.title).toBe('Git Playground — Lo que viene');
+  });
+
   it('redirects an unknown hash to the landing page via history replace', async () => {
     window.location.hash = '#/no-existe';
     render(<App />);

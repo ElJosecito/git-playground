@@ -112,20 +112,13 @@ describe('CheatsheetRoute', () => {
     expect(within(block).getByText('Esc')).toBeInTheDocument();
   });
 
-  it('announces CI/CD as in progress and self-hosting as coming soon', () => {
+  it('no longer hosts the upcoming features, but links to "Lo que viene"', () => {
     render(<CheatsheetRoute />);
-    const cicd = screen.getByRole('region', { name: /CI\/CD/ });
-    expect(within(cicd).getByText('En progreso')).toBeInTheDocument();
-    expect(within(cicd).getByText(/GitHub Actions/)).toBeInTheDocument();
-    const selfHosted = screen.getByRole('region', { name: /Self-hosted/ });
-    expect(within(selfHosted).getByText('Próximamente')).toBeInTheDocument();
-  });
-
-  it('keeps the roadmap sections visible even when the search has no results', async () => {
-    const user = userEvent.setup();
-    render(<CheatsheetRoute />);
-    await user.type(searchBox(), 'zzzz');
-    expect(screen.getByRole('region', { name: /CI\/CD/ })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /CI\/CD/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /Self-hosted/ })).not.toBeInTheDocument();
+    const inPage = screen.getAllByRole('link', { name: /Lo que viene/ }).filter((link) => !link.closest('nav'));
+    expect(inPage.length).toBeGreaterThan(0);
+    expect(inPage[0]).toHaveAttribute('href', '#/roadmap');
   });
 
   it('scopes the page as a scrolling document while mounted', () => {

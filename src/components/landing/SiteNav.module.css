@@ -1,4 +1,4 @@
-/* Shared top bar for the scrolling pages (landing, cheatsheet). Geometry
+/* Shared top bar for the scrolling pages (landing, cheatsheet, roadmap). Geometry
  * comes from the host page's `--rail-x` / `--gutter-end` when present so the
  * brand mark lines up with that page's history rail. */
 .nav {
@@ -58,6 +58,7 @@
 .navLinks {
   display: flex;
   gap: 4px;
+  min-width: 0;
 }
 
 .navLinks a {
@@ -65,6 +66,7 @@
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
   color: var(--text-secondary);
   text-decoration: none;
   transition:
@@ -85,7 +87,7 @@
   border-radius: 8px;
 }
 
-/* Three nav links + the wordmark don't fit a phone-width bar: tighten the
+/* The nav links + the wordmark don't fit a phone-width bar: tighten the
  * links and keep the wordmark for assistive tech only (the mark stays). */
 @media (max-width: 520px) {
   .navLinks a {
@@ -99,5 +101,20 @@
     overflow: hidden;
     clip: rect(0 0 0 0);
     white-space: nowrap;
+  }
+}
+
+/* Four links at the narrowest phones: tighten further so the bar never
+ * scrolls the page sideways. */
+@media (max-width: 400px) {
+  .navInner {
+    gap: 8px;
+  }
+  .navLinks {
+    gap: 0;
+  }
+  .navLinks a {
+    padding: 8px 6px;
+    font-size: 12px;
   }
 }

@@ -1,10 +1,10 @@
-// Shared top bar for the scrolling pages (landing and cheatsheet): brand
+// Shared top bar for the scrolling pages (landing, cheatsheet, roadmap): brand
 // mark plus links to the other routes, each preloading its lazy chunk on
 // hover/focus. `current` marks the page being shown with aria-current.
-import { preloadCheatsheet, preloadLevelMap, preloadPlayground } from '../../app/router/routes';
+import { preloadCheatsheet, preloadLevelMap, preloadPlayground, preloadRoadmap } from '../../app/router/routes';
 import styles from './SiteNav.module.css';
 
-export type SiteNavPage = 'levels' | 'playground' | 'cheatsheet';
+export type SiteNavPage = 'levels' | 'playground' | 'cheatsheet' | 'roadmap';
 
 interface SiteNavLink {
   page: SiteNavPage;
@@ -18,6 +18,7 @@ const LINKS: readonly SiteNavLink[] = [
   { page: 'levels', href: '#/niveles', label: 'Niveles', preload: () => preloadLevelMap() },
   { page: 'playground', href: '#/playground', label: 'Playground', preload: () => preloadPlayground() },
   { page: 'cheatsheet', href: '#/cheatsheet', label: 'Cheatsheet', preload: () => preloadCheatsheet() },
+  { page: 'roadmap', href: '#/roadmap', label: 'Lo que viene', preload: () => preloadRoadmap() },
 ];
 
 export function SiteNav({ current }: { current?: SiteNavPage }) {

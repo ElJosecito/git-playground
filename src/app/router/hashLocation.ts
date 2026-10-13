@@ -11,6 +11,7 @@ export type Route =
   | { name: 'levelMap' }
   | { name: 'level'; id: string }
   | { name: 'cheatsheet' }
+  | { name: 'roadmap' }
   | { name: 'unknown'; fallback: 'landing' | 'levelMap' };
 
 /** Strips the leading `#` (if any) and a leading `/` (if any), returning the
@@ -27,6 +28,7 @@ export function parseRoute(hash: string): Route {
   const [first, second, ...rest] = segments;
   if (first === 'playground' && second === undefined) return { name: 'playground' };
   if (first === 'cheatsheet' && second === undefined) return { name: 'cheatsheet' };
+  if (first === 'roadmap' && second === undefined) return { name: 'roadmap' };
   if (first === 'niveles') {
     if (second === undefined) return { name: 'levelMap' };
     if (second === '' || rest.length > 0) return { name: 'unknown', fallback: 'levelMap' };
@@ -47,6 +49,8 @@ export function buildHash(route: Route): string {
       return `#/niveles/${route.id}`;
     case 'cheatsheet':
       return '#/cheatsheet';
+    case 'roadmap':
+      return '#/roadmap';
     case 'unknown':
       return route.fallback === 'landing' ? '#/' : '#/niveles';
   }

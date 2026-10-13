@@ -110,6 +110,16 @@ describe('LandingRoute', () => {
     expect(spy).toHaveBeenCalled();
   });
 
+  it('links to the roadmap ("Lo que viene") from the main nav and preloads its chunk', async () => {
+    const spy = vi.spyOn(routes, 'preloadRoadmap');
+    render(<LandingRoute />);
+    const nav = screen.getByRole('navigation', { name: 'Principal' });
+    const link = within(nav).getByRole('link', { name: 'Lo que viene' });
+    expect(link).toHaveAttribute('href', '#/roadmap');
+    await userEvent.hover(link);
+    expect(spy).toHaveBeenCalled();
+  });
+
   it('preloads the level-map chunk on hovering "Empezar niveles"', async () => {
     const spy = vi.spyOn(routes, 'preloadLevelMap');
     render(<LandingRoute />);

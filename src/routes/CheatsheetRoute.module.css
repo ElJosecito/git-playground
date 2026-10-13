@@ -1,6 +1,6 @@
 /* Cheatsheet page shell. Speaks the landing's git language: dotted grid,
  * a soft glow, a history rail down the left with each category as a commit
- * node, and the roadmap drawn as unmerged (dashed) branches. Branch-colour
+ * node. Upcoming features live on `#/roadmap`. Branch-colour
  * tokens come from the shared levels theme scope. */
 .root {
   composes: scope from '../components/levels/levelTheme.module.css';
@@ -196,12 +196,21 @@
   outline-offset: 2px;
 }
 
-/* --- roadmap ------------------------------------------------------------- */
-.roadmap {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
-  gap: 16px;
-  margin-top: clamp(48px, 7vw, 80px);
+/* --- link to "Lo que viene" -------------------------------------------- */
+.next {
+  margin: clamp(48px, 7vw, 80px) 0 0;
+  color: var(--text-secondary);
+}
+
+.next a {
+  color: var(--text-primary);
+  text-underline-offset: 3px;
+}
+
+.next a:focus-visible {
+  outline: 2px solid var(--l-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -13,7 +13,6 @@ import { SiteNav } from '../components/landing/SiteNav';
 import { CheatsheetSearch } from '../components/cheatsheet/CheatsheetSearch';
 import { CommandCategory } from '../components/cheatsheet/CommandCategory';
 import { PageShortcuts } from '../components/cheatsheet/PageShortcuts';
-import { RoadmapSection } from '../components/cheatsheet/RoadmapSection';
 import { useSlashToFocus } from '../components/cheatsheet/useSlashToFocus';
 import styles from './CheatsheetRoute.module.css';
 
@@ -81,22 +80,9 @@ export default function CheatsheetRoute() {
           )}
         </div>
 
-        <div className={styles.roadmap}>
-          <RoadmapSection id="cicd" branch="feat/ci-cd" title="CI/CD" badge="En progreso" tone="progress">
-            <p>Estamos trabajando para traer CI/CD a Git Playground. Todavía no está disponible.</p>
-            <ul>
-              <li>Pipelines que se ejecutan con cada push.</li>
-              <li>Workflows al estilo GitHub Actions, definidos en un archivo YAML.</li>
-              <li>Checks en tus pull requests simulados: en verde para fusionar, en rojo para corregir.</li>
-            </ul>
-          </RoadmapSection>
-          <RoadmapSection id="self-hosted" branch="feat/self-hosted" title="Self-hosted" badge="Próximamente" tone="soon">
-            <p>
-              Una forma sencilla de alojar Git Playground en tu propia infraestructura, por ejemplo para un aula o un equipo. Aún no hay
-              fecha.
-            </p>
-          </RoadmapSection>
-        </div>
+        <p className={styles.next}>
+          ¿Buscas CI/CD o self-hosted? Mira <a href="#/roadmap">Lo que viene</a>.
+        </p>
       </div>
     </main>
   );
