@@ -32,7 +32,9 @@ describe('App routing', () => {
   it('deep links into #/playground and renders the real sandbox', async () => {
     window.location.hash = '#/playground';
     render(<App />);
-    expect(await screen.findByLabelText('Comando')).toBeInTheDocument();
+    // First import of the sandbox chunk in a cold worker transforms the whole
+    // engine + shell; under a full parallel run that can exceed findBy's 1s.
+    expect(await screen.findByLabelText('Comando', undefined, { timeout: 5000 })).toBeInTheDocument();
   });
 
   it('deep links into #/niveles and renders the level map', async () => {
