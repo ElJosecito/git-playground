@@ -1,3 +1,5 @@
+/* Landing tokens (--l-*) exist on the cheatsheet page; the sandbox panel
+ * falls back to the shared theme tokens. */
 .search {
   display: grid;
   gap: 8px;
@@ -19,18 +21,18 @@
   align-items: center;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
-  background: var(--l-term-bg);
-  box-shadow: var(--l-card-shadow);
+  background: var(--l-term-bg, var(--surface-terminal));
+  box-shadow: var(--l-card-shadow, none);
   transition:
     border-color var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .field:focus-within {
-  border-color: color-mix(in srgb, var(--l-blue) 70%, transparent);
+  border-color: color-mix(in srgb, var(--l-blue, var(--t-cyan)) 70%, transparent);
   box-shadow:
-    var(--l-card-shadow),
-    0 0 0 3px color-mix(in srgb, var(--l-blue) 25%, transparent);
+    var(--l-card-shadow, none),
+    0 0 0 3px color-mix(in srgb, var(--l-blue, var(--t-cyan)) 25%, transparent);
 }
 
 .prompt {

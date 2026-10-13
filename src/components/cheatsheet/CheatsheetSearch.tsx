@@ -1,5 +1,7 @@
 // Presentational search field. The parent owns the query; Esc clears it
-// (or leaves the field when it is already empty).
+// (or leaves the field when it is already empty). Shared by the
+// `#/cheatsheet` page and the sandbox's cheatsheet panel, so the field id
+// and an extra class are configurable.
 import type { KeyboardEvent, RefObject } from 'react';
 import styles from './CheatsheetSearch.module.css';
 
@@ -9,9 +11,20 @@ interface CheatsheetSearchProps {
   inputRef: RefObject<HTMLInputElement | null>;
   shown: number;
   total: number;
+  /** DOM id of the field; must be unique per page. */
+  id?: string;
+  className?: string;
 }
 
-export function CheatsheetSearch({ query, onQueryChange, inputRef, shown, total }: CheatsheetSearchProps) {
+export function CheatsheetSearch({
+  query,
+  onQueryChange,
+  inputRef,
+  shown,
+  total,
+  id = 'cheatsheet-search',
+  className,
+}: CheatsheetSearchProps) {
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Escape') return;
     event.preventDefault();
@@ -20,8 +33,8 @@ export function CheatsheetSearch({ query, onQueryChange, inputRef, shown, total 
   }
 
   return (
-    <form role="search" className={styles.search} onSubmit={(event) => event.preventDefault()}>
-      <label htmlFor="cheatsheet-search" className={styles.label}>
+    <form role="search" className={className ? `${styles.search} ${className}` : styles.search} onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor={id} className={styles.label}>
         Buscar comandos
       </label>
       <div className={styles.field}>
@@ -30,7 +43,7 @@ export function CheatsheetSearch({ query, onQueryChange, inputRef, shown, total 
         </span>
         <input
           ref={inputRef}
-          id="cheatsheet-search"
+          id={id}
           type="search"
           className={styles.input}
           value={query}

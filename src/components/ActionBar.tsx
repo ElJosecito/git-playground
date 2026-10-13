@@ -1,6 +1,7 @@
 // Top-right action bar: teammate trigger, theme toggle, and the 2-step
 // "Reiniciar repositorio" confirm menu. 1:1 port of the DC template's
 // action-bar block (design-handoff/Git Playground.dc.html, lines 88-105).
+import type { Ref } from 'react';
 import styles from './ActionBar.module.css';
 
 export interface ActionBarProps {
@@ -28,6 +29,13 @@ export interface ActionBarProps {
    * (e.g. `#/niveles` from inside a level). Omitted entirely by default so
    * the sandbox's markup/tests stay unchanged. */
   homeHref?: string;
+  /** When provided, renders the "Cheatsheet" toggle for the sandbox's
+   * command reference panel. Omitted by default (levels don't show it). */
+  onToggleCheatsheet?(): void;
+  cheatsheetOpen?: boolean;
+  /** id of the panel element the toggle controls. */
+  cheatsheetPanelId?: string;
+  cheatsheetButtonRef?: Ref<HTMLButtonElement>;
 }
 
 export function ActionBar({
@@ -44,6 +52,10 @@ export function ActionBar({
   onOpenHosting,
   showReset = true,
   homeHref,
+  onToggleCheatsheet,
+  cheatsheetOpen = false,
+  cheatsheetPanelId,
+  cheatsheetButtonRef,
 }: ActionBarProps) {
   return (
     <div className={styles.bar}>
@@ -66,6 +78,20 @@ export function ActionBar({
       {showHosting && (
         <button type="button" onClick={onOpenHosting} title="Ver pull requests en origin" className={styles.chip}>
           Pull requests ({hostingCount})
+        </button>
+      )}
+      {onToggleCheatsheet && (
+        <button
+          ref={cheatsheetButtonRef}
+          type="button"
+          onClick={onToggleCheatsheet}
+          aria-expanded={cheatsheetOpen}
+          aria-controls={cheatsheetOpen ? cheatsheetPanelId : undefined}
+          aria-keyshortcuts="Control+K Meta+K"
+          title="Comandos de Git (Ctrl+K)"
+          className={`${styles.chip} ${cheatsheetOpen ? styles.chipActive : ''}`}
+        >
+          Cheatsheet
         </button>
       )}
       <button type="button" onClick={onToggleTheme} aria-label="Cambiar tema" title="Cambiar tema claro/oscuro" className={`${styles.chip} ${styles.themeButton}`}>

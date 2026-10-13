@@ -12,7 +12,7 @@
 - **Grafo animado**: commits, ramas y fusiones aparecen al instante, con cámara (pan/zoom) y coreografía de animaciones.
 - **Pull requests simulados**: una web tipo GitHub donde abres PRs, comentas, y fusionas con merge commit, squash o rebase.
 - **30 niveles en 6 mundos** (`#/niveles`): Básicos, Ramas, Merge y conflictos, Deshacer cambios, Remoto, Pull requests. Objetivos verificados en vivo, pistas progresivas, estrellas y desbloqueo por mundos. El progreso se guarda en tu navegador.
-- **Cheatsheet** (`#/cheatsheet`): referencia rápida con buscador (pulsa `/` para buscar y `Esc` para limpiar), explicación de cada comando, atajos y alias equivalentes, y enlace al modo libre para los que el simulador soporta.
+- **Cheatsheet** (`#/cheatsheet`): referencia rápida con buscador (pulsa `/` para buscar y `Esc` para limpiar), explicación de cada comando, atajos y alias equivalentes, y enlace al modo libre para los que el simulador soporta. También está dentro del modo libre: botón **Cheatsheet** o `Ctrl+K` (`Cmd+K` en macOS) abre un panel lateral, y **Usar** escribe el comando en la terminal sin ejecutarlo.
 
 Todo es local: no hay cuentas, servidor ni datos que salgan de tu navegador.
 

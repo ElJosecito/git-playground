@@ -1,0 +1,252 @@
+/* Sandbox cheatsheet panel: a right-side sheet on desktop, a full-width
+ * bottom sheet on mobile. Theme tokens only, so it follows light/dark. */
+
+.panel {
+  position: absolute;
+  top: 60px;
+  right: 16px;
+  bottom: 16px;
+  z-index: var(--z-resolver);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: min(380px, calc(100% - 32px));
+  padding: var(--space-7);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  animation: slide-in var(--dur-base) var(--ease-out);
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.full {
+  margin-inline-start: auto;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.full:hover {
+  color: var(--text-primary);
+}
+
+.close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
+.search {
+  max-width: none;
+}
+
+.search input {
+  padding-block: 10px;
+  font-size: 14px;
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  margin-inline: calc(-1 * var(--space-3));
+  padding-inline: var(--space-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.category + .category {
+  margin-top: var(--space-7);
+}
+
+.categoryTitle {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.items {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-terminal);
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.command {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.use {
+  flex: none;
+  height: 24px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--success);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.use:hover {
+  background: var(--hover);
+}
+
+.summary {
+  margin: var(--space-1) 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.details {
+  margin-top: var(--space-2);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.more {
+  width: fit-content;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.more:hover {
+  color: var(--text-primary);
+}
+
+.explanation {
+  margin: var(--space-3) 0 0;
+  line-height: 1.5;
+}
+
+.shortcutsLabel {
+  margin: var(--space-3) 0 var(--space-1);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shortcuts code {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--hover);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+}
+
+.offline {
+  margin: var(--space-3) 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.use:focus-visible,
+.close:focus-visible,
+.more:focus-visible,
+.full:focus-visible {
+  outline: 2px solid var(--t-cyan);
+  outline-offset: 2px;
+}
+
+@media (max-width: 719px) {
+  .panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: 85vh;
+    height: 85vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    z-index: var(--z-editor);
+    animation-name: sheet-in;
+  }
+
+  @keyframes sheet-in {
+    from {
+      transform: translateY(24px);
+      opacity: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+}
