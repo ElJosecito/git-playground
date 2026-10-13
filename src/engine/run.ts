@@ -17,6 +17,7 @@ import { GIT } from './commands/index';
 import { assertKnownGitSubcommand } from './commands/unsupported';
 import { SHELL, shell } from './commands/shell';
 import { syncHosting } from './hosting/sync';
+import { validName } from './files';
 import type { CommandResult, RepoState } from './types';
 
 /** Wraps a pure state-mutating function with the standard snapshot/diff/error envelope. */
@@ -162,5 +163,48 @@ export function resolver(estado: RepoState, f: string, modo: 'mia' | 'suya' | 'a
     const v = modo === 'mia' ? d.ours : modo === 'suya' ? d.theirs : [d.ours, d.theirs].filter((x) => x != null).join('\n');
     setK(s.files, f, v);
     r.out(M(`Resolviste ${f} (${modo === 'mia' ? 'tu versión' : modo === 'suya' ? 'la otra versión' : 'ambas versiones'}). Ahora márcalo con: git add ${f}`));
+  });
+}
+
+const INVALID_NAME_HINT = 'Usa letras, números, puntos y guiones (sin carpetas).';
+
+/** Pure entry point for the FilesStrip panel's "+ Nuevo archivo" button
+ * (design: file buttons apply state exactly like the shell commands they
+ * mirror, via the same envolver envelope as escribir/resolver, but SILENTLY
+ * — no terminal line). Shares touch's `validName` rule but, unlike touch
+ * (which silently no-ops on an existing name), rejects a duplicate outright
+ * so the panel can show the student a clear error instead of doing
+ * nothing. */
+export function crearArchivo(estado: RepoState, nombre: string): CommandResult {
+  return envolver(estado, (s) => {
+    if (!validName(nombre)) fail('Nombre de archivo no válido.', INVALID_NAME_HINT);
+    if (nombre in s.files) fail(`Ya existe un archivo llamado "${nombre}".`);
+    s.files[nombre] = '';
+  });
+}
+
+/** Pure entry point for the FilesStrip panel's "Renombrar" button. Same
+ * rule as shell's `mv` (destination must be a `validName`), plus an
+ * explicit "target exists" rejection `mv` itself doesn't have (`mv`
+ * silently overwrites an existing destination; the panel needs to ask the
+ * student instead). Renaming to the same name is a clean no-op. */
+export function renombrarArchivo(estado: RepoState, origen: string, destino: string): CommandResult {
+  return envolver(estado, (s) => {
+    if (!(origen in s.files)) fail(`No se puede mover "${origen}": no existe el archivo.`);
+    if (!validName(destino)) fail('Nombre de archivo no válido.', INVALID_NAME_HINT);
+    if (destino === origen) return;
+    if (destino in s.files) fail(`Ya existe un archivo llamado "${destino}".`);
+    s.files[destino] = s.files[origen]!;
+    delete s.files[origen];
+  });
+}
+
+/** Pure entry point for the FilesStrip panel's "Borrar" button. Same rule
+ * as shell's `rm` (file must exist), minus the `.git` special-case (the
+ * panel never lists `.git` as a working-directory file to begin with). */
+export function borrarArchivo(estado: RepoState, nombre: string): CommandResult {
+  return envolver(estado, (s) => {
+    if (!(nombre in s.files)) fail(`No se puede borrar "${nombre}": no existe el archivo.`);
+    delete s.files[nombre];
   });
 }

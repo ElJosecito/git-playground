@@ -2,7 +2,7 @@
 // (design-handoff/git-engine.js), assembled from the ported modules. This
 // is the single entry point consumed by the parity harness and, later, by
 // the React app's hooks.
-import { ejecutar, ejemplo, escribir, resolver, companero } from './run';
+import { ejecutar, ejemplo, escribir, resolver, companero, crearArchivo, renombrarArchivo, borrarArchivo } from './run';
 import { vacio, colorRama, headHash } from './state';
 import { treeOf, curName, resolve } from './refs';
 import { cambiosCommit } from './diff';
@@ -38,6 +38,9 @@ export interface GitEngineApi {
   escribir(estado: RepoState, f: string, txt: string): CommandResult;
   resolver(estado: RepoState, f: string, modo: 'mia' | 'suya' | 'ambas'): CommandResult;
   companero(estado: RepoState): CommandResult;
+  crearArchivo(estado: RepoState, nombre: string): CommandResult;
+  renombrarArchivo(estado: RepoState, origen: string, destino: string): CommandResult;
+  borrarArchivo(estado: RepoState, nombre: string): CommandResult;
   explicar(eventos: GitEvent[], estado: RepoState): ExplainResult | null;
   layout(estado: RepoState): Layout;
   estadoArchivos(estado: RepoState): FilesStatus;
@@ -71,6 +74,9 @@ export const GitEngine: GitEngineApi = {
   escribir,
   resolver,
   companero,
+  crearArchivo,
+  renombrarArchivo,
+  borrarArchivo,
   explicar,
   layout,
   estadoArchivos,

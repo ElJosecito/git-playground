@@ -84,6 +84,71 @@ describe('playgroundReducer', () => {
       expect(s2.transition?.prev).toBe(s1.repo);
       expect(s2.transition?.next).toBe(res2.estado);
     });
+
+    // Fixes a stale-editor bug: if the file open in FileEditorModal
+    // disappears from the working tree (a terminal `rm`/`mv`, OR the
+    // FilesStrip "Borrar"/"Renombrar" buttons — both go through this same
+    // 'applied' action), the modal must close instead of staying open with
+    // stale text that would resurrect the old file on "Guardar" (escribir
+    // writes unconditionally). Fixed here, once, for both paths.
+    it('closes an open editor when its file no longer exists in the next repo (rm/Borrar)', () => {
+      const prev = repoWithOneCommit();
+      const next = repoWithOneCommit();
+      delete next.files['a.txt'];
+      const s0 = { ...createInitialPlaygroundState(), repo: prev, editor: { file: 'a.txt', text: 'hola editado' } };
+      const res = resultFor(next);
+      const s1 = playgroundReducer(s0, { type: 'applied', res, prefixLine: null });
+      expect(s1.editor).toBeNull();
+    });
+
+    it('closes an open editor when its file is renamed away (mv/Renombrar)', () => {
+      const prev = repoWithOneCommit();
+      const next = repoWithOneCommit();
+      next.files['b.txt'] = next.files['a.txt']!;
+      delete next.files['a.txt'];
+      const s0 = { ...createInitialPlaygroundState(), repo: prev, editor: { file: 'a.txt', text: 'hola editado' } };
+      const res = resultFor(next);
+      const s1 = playgroundReducer(s0, { type: 'applied', res, prefixLine: null });
+      expect(s1.editor).toBeNull();
+    });
+
+    it('keeps the editor open when its file still exists in the next repo', () => {
+      const prev = repoWithOneCommit();
+      const next = repoWithOneCommit();
+      next.files['other.txt'] = 'x';
+      const s0 = { ...createInitialPlaygroundState(), repo: prev, editor: { file: 'a.txt', text: 'hola editado' } };
+      const res = resultFor(next);
+      const s1 = playgroundReducer(s0, { type: 'applied', res, prefixLine: null });
+      expect(s1.editor).toEqual({ file: 'a.txt', text: 'hola editado' });
+    });
+
+    it('is a no-op (no editor to close) when no editor is open', () => {
+      const prev = repoWithOneCommit();
+      const next = repoWithOneCommit();
+      delete next.files['a.txt'];
+      const s0 = { ...createInitialPlaygroundState(), repo: prev, editor: null };
+      const res = resultFor(next);
+      const s1 = playgroundReducer(s0, { type: 'applied', res, prefixLine: null });
+      expect(s1.editor).toBeNull();
+    });
+
+    // Edge case: `edit nuevo.txt` opens the editor for a file that does NOT
+    // exist yet (the oracle/engine only writes it on save). The stale-editor
+    // rule above must not fire for this case — the file was never in the
+    // PREVIOUS repo either, so its absence from `next.files` is normal, not
+    // a sign the file was deleted/renamed out from under the editor. An
+    // unrelated command applied while that editor is open (a terminal
+    // command, or a FilesStrip button for a DIFFERENT file) must leave it
+    // open with the unsaved text intact.
+    it('keeps an editor open for a file that does not exist yet (new, unsaved file) across an unrelated applied command', () => {
+      const prev = repoWithOneCommit();
+      const next = repoWithOneCommit();
+      next.files['other.txt'] = 'x';
+      const s0 = { ...createInitialPlaygroundState(), repo: prev, editor: { file: 'nuevo.txt', text: 'borrador sin guardar' } };
+      const res = resultFor(next);
+      const s1 = playgroundReducer(s0, { type: 'applied', res, prefixLine: null });
+      expect(s1.editor).toEqual({ file: 'nuevo.txt', text: 'borrador sin guardar' });
+    });
   });
 
   it('echoed appends only the echo line and clears input', () => {

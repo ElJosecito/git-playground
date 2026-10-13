@@ -115,6 +115,17 @@ export function playgroundReducer(state: PlaygroundState, action: PlaygroundActi
       ];
       const { lines, nextLineId } = appendLines(state.lines, state.nextLineId, prev, inputs);
       const hasMergeConflict = action.res.eventos.some((e) => e.type === 'merge-conflict');
+      // A stale FileEditorModal is worse than a closed one: if the file it
+      // has open EXISTED before this command but no longer exists AFTER it
+      // (a terminal `rm`/`mv`, or the FilesStrip "Borrar"/"Renombrar"
+      // buttons — both route through this same 'applied' action), close it
+      // rather than let "Guardar" resurrect the old file via `escribir`
+      // (which writes unconditionally, with no existence check). Gated on
+      // the file having existed in `prev` so `edit nuevo.txt` (opens the
+      // editor for a file that doesn't exist yet — it's only written on
+      // save) isn't closed by the very next unrelated command: that file's
+      // absence from `next.files` is normal, not a sign it was deleted.
+      const staleEditor = state.editor != null && !!prev && state.editor.file in prev.files && !(state.editor.file in next.files);
       return {
         ...state,
         repo: next,
@@ -122,6 +133,7 @@ export function playgroundReducer(state: PlaygroundState, action: PlaygroundActi
         nextLineId,
         input: action.prefixLine ? '' : state.input,
         resolverHidden: hasMergeConflict ? false : state.resolverHidden,
+        editor: staleEditor ? null : state.editor,
         transition: { id: (state.transition?.id ?? 0) + 1, res: action.res, prev, next },
       };
     }

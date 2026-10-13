@@ -118,6 +118,32 @@ describe('useGitPlayground', () => {
     expect(result.current.state.repo?.files['README.md']).toBe('nuevo contenido');
   });
 
+  // Stale-editor bug fix: if the editor's open file disappears from the
+  // repo as a result of ANY applied command — a typed `rm`/`mv` here, or
+  // the FilesStrip buttons below — the editor must close rather than stay
+  // open with text that "Guardar" would otherwise resurrect as the old
+  // file via `escribir` (unconditional write, no existence check).
+  it('closes the editor when a typed "rm" deletes its open file', () => {
+    const { result } = renderHook(() => useGitPlayground());
+    act(() => result.current.openEditor('README.md'));
+    act(() => result.current.run('rm README.md'));
+    expect(result.current.state.editor).toBeNull();
+  });
+
+  it('closes the editor when a typed "mv" renames its open file away', () => {
+    const { result } = renderHook(() => useGitPlayground());
+    act(() => result.current.openEditor('README.md'));
+    act(() => result.current.run('mv README.md LEEME.md'));
+    expect(result.current.state.editor).toBeNull();
+  });
+
+  it('does NOT close the editor for an unrelated command that leaves its file untouched', () => {
+    const { result } = renderHook(() => useGitPlayground());
+    act(() => result.current.openEditor('README.md'));
+    act(() => result.current.run('touch otro.txt'));
+    expect(result.current.state.editor).not.toBeNull();
+  });
+
   it('historyPrev/historyNext cycle through previously run commands', () => {
     const { result } = renderHook(() => useGitPlayground());
     act(() => {
@@ -678,6 +704,143 @@ describe('useGitPlayground', () => {
     it('defaults to the sandbox welcome banner when bootLines is omitted', () => {
       const { result } = renderHook(() => useGitPlayground(undefined, undefined, {}));
       expect(result.current.state.lines).toHaveLength(3);
+    });
+  });
+
+  // FilesStrip panel buttons ("+ Nuevo archivo" / "Renombrar" / "Borrar" —
+  // task "Students shouldn't need shell commands to manage files"). Same
+  // error/ok shape as `hosting.*` above (HostingOutcome), applied through
+  // the SAME `applyResult(res, null)` path as `resolveConflict`/
+  // `simulateTeammate` (null prefixLine -> no terminal echo), and the
+  // underlying engine functions never call `r.out` on success, so no line
+  // is ever added to the terminal on the happy path either. Deliberately do
+  // NOT fire `onAction` (unlike resolveConflict/saveFile) — a level's
+  // command budget must not be consumed by button-driven file edits.
+  describe('useGitPlayground / createFile, renameFile, deleteFile', () => {
+    it('createFile(): creates an empty file silently (no terminal line) and updates the repo', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      const linesBefore = result.current.state.lines.length;
+      let outcome: ReturnType<typeof result.current.createFile> | undefined;
+      act(() => {
+        outcome = result.current.createFile('notas.txt');
+      });
+      expect(outcome).toEqual({ ok: true });
+      expect(result.current.state.lines.length).toBe(linesBefore);
+      expect(result.current.state.repo?.files['notas.txt']).toBe('');
+    });
+
+    it('createFile(): rejects an invalid name without touching the terminal or the repo', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      const linesBefore = result.current.state.lines.length;
+      const repoBefore = result.current.state.repo;
+      let outcome: ReturnType<typeof result.current.createFile> | undefined;
+      act(() => {
+        outcome = result.current.createFile('bad name!');
+      });
+      expect(outcome).toEqual({ ok: false, lines: expect.any(Array) });
+      expect(result.current.state.lines.length).toBe(linesBefore);
+      expect(result.current.state.repo).toBe(repoBefore);
+    });
+
+    it('createFile(): rejects a duplicate name', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      let outcome: ReturnType<typeof result.current.createFile> | undefined;
+      act(() => {
+        outcome = result.current.createFile('README.md');
+      });
+      expect(outcome).toEqual({ ok: false, lines: expect.any(Array) });
+    });
+
+    it('renameFile(): renames a file silently (no terminal line)', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      const linesBefore = result.current.state.lines.length;
+      let outcome: ReturnType<typeof result.current.renameFile> | undefined;
+      act(() => {
+        outcome = result.current.renameFile('README.md', 'LEEME.md');
+      });
+      expect(outcome).toEqual({ ok: true });
+      expect(result.current.state.lines.length).toBe(linesBefore);
+      expect(result.current.state.repo?.files['LEEME.md']).toBeDefined();
+      expect(result.current.state.repo?.files['README.md']).toBeUndefined();
+    });
+
+    it('renameFile(): rejects a destination name that already exists', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      act(() => result.current.run('touch otro.txt'));
+      let outcome: ReturnType<typeof result.current.renameFile> | undefined;
+      act(() => {
+        outcome = result.current.renameFile('README.md', 'otro.txt');
+      });
+      expect(outcome).toEqual({ ok: false, lines: expect.any(Array) });
+    });
+
+    it('deleteFile(): deletes a file silently (no terminal line)', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      const linesBefore = result.current.state.lines.length;
+      let outcome: ReturnType<typeof result.current.deleteFile> | undefined;
+      act(() => {
+        outcome = result.current.deleteFile('README.md');
+      });
+      expect(outcome).toEqual({ ok: true });
+      expect(result.current.state.lines.length).toBe(linesBefore);
+      expect(result.current.state.repo?.files['README.md']).toBeUndefined();
+    });
+
+    it('deleteFile(): rejects a file that does not exist', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      let outcome: ReturnType<typeof result.current.deleteFile> | undefined;
+      act(() => {
+        outcome = result.current.deleteFile('no-existe.txt');
+      });
+      expect(outcome).toEqual({ ok: false, lines: expect.any(Array) });
+    });
+
+    it('createFile()/renameFile()/deleteFile() each call choreo.finishAll() before applying', () => {
+      const choreo = makeFakeChoreo();
+      const { result } = renderHook(() => useGitPlayground(choreo));
+      act(() => result.current.createFile('a.txt'));
+      expect(choreo.finishAll).toHaveBeenCalledTimes(1);
+      act(() => result.current.renameFile('a.txt', 'b.txt'));
+      expect(choreo.finishAll).toHaveBeenCalledTimes(2);
+      act(() => result.current.deleteFile('b.txt'));
+      expect(choreo.finishAll).toHaveBeenCalledTimes(3);
+    });
+
+    it('does NOT fire onAction for createFile/renameFile/deleteFile (button actions never consume a level command budget)', () => {
+      const onAction = vi.fn();
+      const { result } = renderHook(() => useGitPlayground(undefined, undefined, { onAction }));
+      onAction.mockClear();
+      act(() => {
+        result.current.createFile('a.txt');
+        result.current.renameFile('a.txt', 'b.txt');
+        result.current.deleteFile('b.txt');
+      });
+      expect(onAction).not.toHaveBeenCalled();
+    });
+
+    it('deleteFile() closes the editor when it deletes the file currently open in it', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      act(() => result.current.openEditor('README.md'));
+      act(() => result.current.deleteFile('README.md'));
+      expect(result.current.state.editor).toBeNull();
+    });
+
+    it('renameFile() closes the editor when it renames the file currently open in it', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      act(() => result.current.openEditor('README.md'));
+      act(() => result.current.renameFile('README.md', 'LEEME.md'));
+      expect(result.current.state.editor).toBeNull();
+    });
+
+    it('createFile()/renameFile()/deleteFile() do NOT close the editor when they do not touch its open file', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      act(() => result.current.openEditor('README.md'));
+      act(() => {
+        result.current.createFile('a.txt');
+        result.current.renameFile('a.txt', 'b.txt');
+        result.current.deleteFile('b.txt');
+      });
+      expect(result.current.state.editor).not.toBeNull();
     });
   });
 });

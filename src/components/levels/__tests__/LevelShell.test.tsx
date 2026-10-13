@@ -152,4 +152,28 @@ describe('LevelShell', () => {
     await userEvent.setup().click(screen.getByRole('button', { name: 'Cambiar tema' }));
     expect(document.documentElement.dataset.theme).not.toBe(before);
   });
+
+  // FilesStrip panel buttons ("+ Nuevo archivo" etc.) reuse the exact same
+  // `useWorkspace`/`WorkspaceView` a level already shares with the sandbox,
+  // so a button-created file (1) still drives `evaluateLevel`'s goal checks
+  // off the real repo state and (2) must NOT add to the command budget —
+  // only typed/debug-API commands and resolveConflict/saveFile do.
+  it('a file created via the FilesStrip "+ Nuevo archivo" button counts toward the level goal but NOT the command budget', async () => {
+    renderLevel();
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText('Comando'), 'git init{Enter}');
+
+    await user.click(screen.getByText('+ Nuevo archivo'));
+    await user.type(screen.getByRole('textbox', { name: 'Nombre del nuevo archivo' }), 'README.md{Enter}');
+    // The button action closed its inline form and did not echo anything
+    // to the terminal (no new line beyond the "git init" echo+output).
+    expect(screen.queryByRole('textbox', { name: 'Nombre del nuevo archivo' })).not.toBeInTheDocument();
+
+    await runCommands(['git add README.md', 'git commit -m "Primer commit"']);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // 3 typed commands (git init, git add, git commit) out of a 7 budget —
+    // the button-driven file creation did not bump the count.
+    expect(screen.getByLabelText('Comandos: 3 de 7')).toBeInTheDocument();
+  });
 });
