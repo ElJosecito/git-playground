@@ -1,6 +1,6 @@
 // App root: a route switch by `window.location.hash` (app-shell spec delta
 // "Route Switch Owns the App Root"). Landing is eager; the sandbox, level
-// map, and a level are React.lazy (app-routing spec "Route-Level Code
+// map, a level, and the cheatsheet are React.lazy (app-routing spec "Route-Level Code
 // Splitting") so visiting `#/` never pulls them into the initial chunk.
 // `ThemeProvider` wraps the whole switch so theme stays app-wide across
 // every route (app-shell spec delta "Theme Toggle").
@@ -12,7 +12,7 @@ import { ThemeProvider } from './app/theme/ThemeProvider';
 import { RouteFrame } from './app/router/RouteFrame';
 import { Redirect } from './app/router/Redirect';
 import { LandingRoute } from './routes/LandingRoute';
-import { PlaygroundRouteLazy, LevelMapRouteLazy, LevelRouteLazy } from './app/router/routes';
+import { PlaygroundRouteLazy, LevelMapRouteLazy, LevelRouteLazy, CheatsheetRouteLazy } from './app/router/routes';
 
 /** In-memory scroll-position ledger, keyed by route (design.md: "pop
  * navigation: restores scrollY from an in-memory Map"). Module-level since
@@ -33,6 +33,8 @@ function titleOf(route: Route): string {
       return 'Git Playground — Niveles';
     case 'level':
       return `Git Playground — Nivel ${route.id}`;
+    case 'cheatsheet':
+      return 'Git Playground — Cheatsheet';
     case 'unknown':
       return 'Git Playground';
   }
@@ -48,6 +50,8 @@ function RouteContent({ route }: { route: Route }) {
       return <LevelMapRouteLazy />;
     case 'level':
       return <LevelRouteLazy id={route.id} />;
+    case 'cheatsheet':
+      return <CheatsheetRouteLazy />;
     case 'unknown':
       return <Redirect to={{ name: route.fallback }} />;
   }

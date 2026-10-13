@@ -21,7 +21,7 @@
 // `global.css`'s `body { overflow: hidden }` is scoped off via
 // `data-scroll-page` for exactly as long as this route is mounted.
 import { useEffect, useRef } from 'react';
-import { preloadLevelMap, preloadPlayground } from '../app/router/routes';
+import { preloadCheatsheet, preloadLevelMap, preloadPlayground } from '../app/router/routes';
 import { useScrollProgress } from '../hooks/useScrollProgress';
 import { Hero } from '../components/landing/Hero';
 import { Features } from '../components/landing/Features';
@@ -65,7 +65,7 @@ function LandingNav() {
             <circle cx="6" cy="20" r="2.4" />
             <circle cx="18" cy="17" r="2.4" />
           </svg>
-          <span>
+          <span className={styles.brandText}>
             git<span className={styles.brandDim}>/</span>playground
           </span>
         </a>
@@ -75,6 +75,9 @@ function LandingNav() {
           </a>
           <a href="#/playground" onMouseEnter={() => preloadPlayground()} onFocus={() => preloadPlayground()}>
             Playground
+          </a>
+          <a href="#/cheatsheet" onMouseEnter={() => preloadCheatsheet()} onFocus={() => preloadCheatsheet()}>
+            Cheatsheet
           </a>
         </div>
       </div>

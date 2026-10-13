@@ -50,6 +50,13 @@ describe('App routing', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Tu primer commit' })).toBeInTheDocument();
   });
 
+  it('deep links into #/cheatsheet and renders the cheatsheet', async () => {
+    window.location.hash = '#/cheatsheet';
+    render(<App />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cheatsheet de Git' })).toBeInTheDocument();
+    expect(document.title).toBe('Git Playground — Cheatsheet');
+  });
+
   it('redirects an unknown hash to the landing page via history replace', async () => {
     window.location.hash = '#/no-existe';
     render(<App />);

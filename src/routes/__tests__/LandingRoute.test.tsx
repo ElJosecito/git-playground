@@ -100,6 +100,16 @@ describe('LandingRoute', () => {
     expect(playSpy).toHaveBeenCalled();
   });
 
+  it('links to the cheatsheet from the main nav and preloads its chunk', async () => {
+    const spy = vi.spyOn(routes, 'preloadCheatsheet');
+    render(<LandingRoute />);
+    const nav = screen.getByRole('navigation', { name: 'Principal' });
+    const link = within(nav).getByRole('link', { name: 'Cheatsheet' });
+    expect(link).toHaveAttribute('href', '#/cheatsheet');
+    await userEvent.hover(link);
+    expect(spy).toHaveBeenCalled();
+  });
+
   it('preloads the level-map chunk on hovering "Empezar niveles"', async () => {
     const spy = vi.spyOn(routes, 'preloadLevelMap');
     render(<LandingRoute />);

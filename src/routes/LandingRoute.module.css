@@ -237,6 +237,23 @@
   border-radius: 8px;
 }
 
+/* Three nav links + the wordmark don't fit a phone-width bar: tighten the
+ * links and keep the wordmark for assistive tech only (the mark stays). */
+@media (max-width: 520px) {
+  .navLinks a {
+    padding: 8px 8px;
+    font-size: 13px;
+  }
+  .brandText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
 /* --- frame + history rail ------------------------------------------------ */
 .frame {
   position: relative;
