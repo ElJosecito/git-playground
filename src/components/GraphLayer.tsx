@@ -61,6 +61,16 @@ export interface GraphLayerProps {
    * animation before `finishAll()`/the 420ms timer clears them (oracle:
    * `L.labels.concat(P.leaving.map(l=>({...l,leaving:true})))`). */
   leaving?: readonly LLabel[];
+  /** Commit hashes that are new since the previously rendered layout —
+   * tags the node's `<g>` with `data-born` so a consumer's own stylesheet
+   * can opt into an entrance animation (the landing hero does this; the
+   * real playground's WAAPI choreography does not use this prop and is
+   * unaffected). Optional and empty by default: no caller that omits it
+   * ever sees a `data-born` attribute. */
+  bornNodeIds?: ReadonlySet<Hash>;
+  /** Same idea as `bornNodeIds`, for `LEdge.id`s new since the previous
+   * layout — tags the edge `<path>` with `data-born`. */
+  bornEdgeIds?: ReadonlySet<string>;
 }
 
 function evH(handlers: GraphHandlers | undefined, kind: HoverKind, id: string, pos: Point, r: number) {
@@ -72,7 +82,17 @@ function evH(handlers: GraphHandlers | undefined, kind: HoverKind, id: string, p
   };
 }
 
-function GraphLayerComponent({ layout: L, tipId, worldRef, refs, handlers, fxRef, leaving = [] }: GraphLayerProps) {
+function GraphLayerComponent({
+  layout: L,
+  tipId,
+  worldRef,
+  refs,
+  handlers,
+  fxRef,
+  leaving = [],
+  bornNodeIds,
+  bornEdgeIds,
+}: GraphLayerProps) {
   const tipH = tipId;
 
   return (
@@ -175,6 +195,7 @@ function GraphLayerComponent({ layout: L, tipId, worldRef, refs, handlers, fxRef
             key={e.id}
             d={e.d}
             data-child={e.child}
+            data-born={bornEdgeIds?.has(e.id) ? 1 : undefined}
             ref={refs?.edge}
             className={styles.edge}
             style={{
@@ -239,6 +260,9 @@ function GraphLayerComponent({ layout: L, tipId, worldRef, refs, handlers, fxRef
             <g
               key={n.h}
               data-h={n.h}
+              data-born={bornNodeIds?.has(n.h) ? 1 : undefined}
+              // Unlike data-born, this is set for EVERY caller (not opt-in) — inert metadata unless a caller's own CSS targets it.
+              data-tip={tipH === n.h ? 1 : undefined}
               ref={refs?.node}
               tabIndex={0}
               role="button"

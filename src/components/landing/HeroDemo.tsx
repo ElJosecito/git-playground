@@ -20,6 +20,13 @@ const CHAR_MS = 45;
 const HOLD_MS = 600;
 const LOOP_PAUSE_MS = 3000;
 
+// Breathing room (px) subtracted from `.graphWrap`'s measured size before
+// fitting the graph to it, so a newborn node's pop/ripple and a fresh
+// edge's glow never touch the wrap's `overflow: hidden` clip edge.
+const GRAPH_EDGE_PADDING = 28;
+
+const EMPTY_IDS: ReadonlySet<string> = new Set();
+
 interface Frame {
   state: RepoState;
   layout: Layout;
@@ -75,6 +82,14 @@ export function HeroDemo() {
   const rootRef = useRef<HTMLDivElement>(null);
   const graphWrapRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<SVGGElement>(null);
+
+  // Hashes/ids rendered in the PREVIOUSLY committed frame — diffed against
+  // the current frame (below) to find what's newly born this render, then
+  // updated (in the layout effect further down) once that diff has been
+  // read, so the NEXT transition diffs against what's on screen now, not
+  // against itself.
+  const prevNodeHashesRef = useRef<ReadonlySet<string>>(EMPTY_IDS);
+  const prevEdgeIdsRef = useRef<ReadonlySet<string>>(EMPTY_IDS);
 
   // Pause reason 1/3: the tab/window is hidden (WCAG 2.2.2 doesn't require
   // this one, but there is no point burning the typing timer in a
@@ -183,6 +198,34 @@ export function HeroDemo() {
   const typedCommand = reducedMotion ? '' : phase === 'typing' ? (HERO_SCRIPT[stepIndex] ?? '').slice(0, charCount) : HERO_SCRIPT[stepIndex] ?? '';
   const headHash = GitEngine.headHash(displayFrame.state);
 
+  // Newly-born commit nodes/edges — this render's node/edge ids that
+  // weren't in the PREVIOUSLY COMMITTED frame (recorded by the effect
+  // below, so this is a true "previous vs. current" diff, not a
+  // self-comparison). Never populated under reduced motion, so GraphLayer
+  // never receives a `data-born` attribute to animate from in that mode.
+  // Looping back to the empty frame clears both sets, so the first commits
+  // read as "new" again next time around instead of flashing in.
+  const bornNodeIds = useMemo(() => {
+    if (reducedMotion) return EMPTY_IDS;
+    const prev = prevNodeHashesRef.current;
+    const born = new Set<string>();
+    for (const n of displayFrame.layout.nodes) if (!prev.has(n.h)) born.add(n.h);
+    return born;
+  }, [displayFrame, reducedMotion]);
+
+  const bornEdgeIds = useMemo(() => {
+    if (reducedMotion) return EMPTY_IDS;
+    const prev = prevEdgeIdsRef.current;
+    const born = new Set<string>();
+    for (const e of displayFrame.layout.edges) if (!prev.has(e.id)) born.add(e.id);
+    return born;
+  }, [displayFrame, reducedMotion]);
+
+  useEffect(() => {
+    prevNodeHashesRef.current = new Set(displayFrame.layout.nodes.map((n) => n.h));
+    prevEdgeIdsRef.current = new Set(displayFrame.layout.edges.map((e) => e.id));
+  }, [displayFrame]);
+
   useLayoutEffect(() => {
     const g = worldRef.current;
     if (!g) return;
@@ -192,20 +235,29 @@ export function HeroDemo() {
       return;
     }
     const rect = graphWrapRef.current?.getBoundingClientRect();
-    const availW = rect && rect.width > 0 ? rect.width : 640;
-    const availH = rect && rect.height > 0 ? rect.height : 300;
+    const fullW = rect && rect.width > 0 ? rect.width : 640;
+    const fullH = rect && rect.height > 0 ? rect.height : 300;
+    const availW = Math.max(fullW - GRAPH_EDGE_PADDING * 2, 1);
+    const availH = Math.max(fullH - GRAPH_EDGE_PADDING * 2, 1);
     const w = Math.max(bbox.x1 - bbox.x0, 1);
     const h = Math.max(bbox.y1 - bbox.y0, 1);
     const scale = Math.min(availW / w, availH / h, 1);
-    const tx = availW / 2 - ((bbox.x0 + bbox.x1) / 2) * scale;
-    const ty = availH / 2 - ((bbox.y0 + bbox.y1) / 2) * scale;
+    const tx = fullW / 2 - ((bbox.x0 + bbox.x1) / 2) * scale;
+    const ty = fullH / 2 - ((bbox.y0 + bbox.y1) / 2) * scale;
     g.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
   }, [displayFrame]);
 
   return (
     <div ref={rootRef} className={styles.root}>
       <div ref={graphWrapRef} className={styles.graphWrap} aria-hidden="true">
-        <GraphLayer layout={displayFrame.layout} planVersion={0} tipId={headHash} worldRef={worldRef} />
+        <GraphLayer
+          layout={displayFrame.layout}
+          planVersion={0}
+          tipId={headHash}
+          worldRef={worldRef}
+          bornNodeIds={bornNodeIds}
+          bornEdgeIds={bornEdgeIds}
+        />
       </div>
 
       {reducedMotion ? (

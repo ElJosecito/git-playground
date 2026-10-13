@@ -1,11 +1,19 @@
 /* The hero's live graph + terminal line. Since the landing redesign, the
  * surrounding "window" chrome (title bar, border, shadow) is drawn by
  * Hero.module.css's `.window`; this root is a borderless inner panel.
- * The hero's live graph + terminal line. CSS keyframe "births" for new
- * commit nodes (design.md UI: "CSS keyframe births") ride on GraphLayer's
- * own `.node`/`.link` classes (GraphLayer.module.css) — this file only
- * owns the demo's own chrome: the sized SVG viewport, the fake terminal
- * line, the static reduced-motion script list, and the pause control. */
+ *
+ * CSS keyframe "births" for new commit nodes (design.md UI: "CSS keyframe
+ * births") are owned HERE, not by GraphLayer.module.css: GraphLayer only
+ * tags newly-born nodes/edges with a plain `data-born` attribute
+ * (`bornNodeIds`/`bornEdgeIds` props, computed by HeroDemo.tsx as a
+ * previous-vs-current frame diff). Targeting that attribute from this
+ * module — rather than editing GraphLayer.module.css's `.node`/`.edge`
+ * classes — keeps the entrance animation scoped to the hero: the real
+ * playground never passes those props, so it never gets a `data-born`
+ * attribute to match, and its own WAAPI birth/move choreography
+ * (`useChoreography`) is untouched. This file otherwise just owns the
+ * demo's own chrome: the sized SVG viewport, the fake terminal line, the
+ * static reduced-motion script list, and the pause control. */
 .root {
   position: relative;
   display: flex;
@@ -103,4 +111,57 @@
 .pauseButton:focus-visible {
   outline: 2px solid var(--success);
   outline-offset: 2px;
+}
+
+/* --- commit "birth" entrance (hero-only, see the header comment) -------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* The outer `<g data-h>` keeps GraphLayer.module.css's own `transform`
+   * transition (so an existing node sliding to a new resting position
+   * still moves smoothly) — the pop-in below plays on its `[data-inner]`
+   * child instead, exactly as GraphLayer renders it (fill-box/center
+   * transform-origin already set inline). */
+  .graphWrap [data-born] > [data-inner] {
+    animation: nodeBorn 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  /* A fresh commit's incoming edge fades up instead of popping in at full
+   * opacity — a "stroke-draw" needs the path's real length (via
+   * `getTotalLength()`/`pathLength`), which would mean touching
+   * GraphLayer's edges for every caller; a fade reads just as well for a
+   * ~70-140px arc and keeps this change hero-only. */
+  .graphWrap path[data-born] {
+    animation: edgeBorn 420ms ease-out both;
+  }
+
+  /* Subtle ripple on the HEAD commit specifically, when it's also the one
+   * that just appeared (e.g. not on a plain checkout). Reuses the oracle's
+   * existing `data-ripple` circle, which the playground only ever animates
+   * imperatively via `pulseHead()` — untouched here. */
+  .graphWrap [data-born][data-tip] [data-ripple] {
+    animation: headRipple 700ms ease-out both;
+  }
+
+  @keyframes nodeBorn {
+    from {
+      transform: scale(0);
+      opacity: 0;
+    }
+  }
+
+  @keyframes edgeBorn {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes headRipple {
+    from {
+      opacity: 0.6;
+      transform: scale(0.6);
+    }
+    to {
+      opacity: 0;
+      transform: scale(2.1);
+    }
+  }
 }

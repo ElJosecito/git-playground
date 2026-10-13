@@ -210,6 +210,18 @@
   z-index: -1;
 }
 
+/* Nothing here actually clips `--l-window-shadow` — `overflow: hidden`
+ * does NOT clip an element's own box-shadow (verified empirically; that's
+ * a common misconception), and no ancestor up to `<body>` clips vertically
+ * either (checked LandingRoute.module.css's `.root`/`.backdrop`/`.frame`:
+ * only `overflow-x: clip` on `.root`, which doesn't touch the Y axis, and
+ * the shadow's horizontal bleed is small enough to stay inside the hero's
+ * gutters at every width). The "hard, cut-off" look the token used to have
+ * was the shadow's OWN shape: one layer with a large blur but an even
+ * larger negative spread fades out abruptly at its own edge, reading as a
+ * stamped/clipped blob rather than a soft falloff. `--l-window-shadow` (in
+ * LandingRoute.module.css) is now several lower-opacity layers with a
+ * smaller spread-to-blur ratio instead — that alone fixes it. */
 .window {
   position: relative;
   border-radius: 18px;

@@ -167,6 +167,70 @@ describe('GraphLayer', () => {
     expect(onRemoteBoxClick).toHaveBeenCalledTimes(1);
   });
 
+  // New behavior: the hero's own "commit birth" entrance (see
+  // components/landing/HeroDemo.module.css) needs a plain data attribute
+  // to animate from — GraphLayer itself stays decorative/choreography-free
+  // (design D8), it just tags what the caller tells it is new.
+  it('tags a node with data-born when its hash is in bornNodeIds, and leaves other nodes untagged', () => {
+    const repo = GitEngine.ejemplo();
+    const layout = layoutOf(repo);
+    const bornHash = layout.nodes[0]!.h;
+    const worldRef = createRef<SVGGElement>();
+    render(
+      <GraphLayer
+        layout={layout}
+        planVersion={0}
+        tipId={null}
+        worldRef={worldRef}
+        bornNodeIds={new Set([bornHash])}
+      />,
+    );
+    expect(document.querySelector(`[data-h="${bornHash}"][data-born]`)).not.toBeNull();
+    for (const n of layout.nodes) {
+      if (n.h === bornHash) continue;
+      expect(document.querySelector(`[data-h="${n.h}"][data-born]`)).toBeNull();
+    }
+  });
+
+  it('tags only the edge(s) in bornEdgeIds with data-born', () => {
+    const repo = GitEngine.ejemplo();
+    const layout = layoutOf(repo);
+    expect(layout.edges.length).toBeGreaterThan(0);
+    const bornEdgeId = layout.edges[0]!.id;
+    const worldRef = createRef<SVGGElement>();
+    render(
+      <GraphLayer
+        layout={layout}
+        planVersion={0}
+        tipId={null}
+        worldRef={worldRef}
+        bornEdgeIds={new Set([bornEdgeId])}
+      />,
+    );
+    expect(document.querySelectorAll('path[data-born]').length).toBe(1);
+  });
+
+  it('never adds data-born when bornNodeIds/bornEdgeIds are omitted (default: no callers see it)', () => {
+    const repo = GitEngine.ejemplo();
+    const layout = layoutOf(repo);
+    const worldRef = createRef<SVGGElement>();
+    render(<GraphLayer layout={layout} planVersion={0} tipId={null} worldRef={worldRef} />);
+    expect(document.querySelector('[data-born]')).toBeNull();
+  });
+
+  it('tags the current tip node with data-tip', () => {
+    const repo = GitEngine.ejemplo();
+    const layout = layoutOf(repo);
+    const tip = layout.nodes[0]!.h;
+    const worldRef = createRef<SVGGElement>();
+    render(<GraphLayer layout={layout} planVersion={0} tipId={tip} worldRef={worldRef} />);
+    expect(document.querySelector(`[data-h="${tip}"][data-tip]`)).not.toBeNull();
+    for (const n of layout.nodes) {
+      if (n.h === tip) continue;
+      expect(document.querySelector(`[data-h="${n.h}"][data-tip]`)).toBeNull();
+    }
+  });
+
   it('is memoized: an identical layout object does not re-render on an unrelated parent re-render', () => {
     const repo = GitEngine.ejemplo();
     const layout = layoutOf(repo);
