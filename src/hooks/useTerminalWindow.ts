@@ -51,6 +51,10 @@ export function useTerminalWindow(view: TerminalViewport): UseTerminalWindowResu
   const [box, setBox] = useState<TerminalBox | null>(null);
   const [min, setMin] = useState(false);
   const [max, setMax] = useState(false);
+  // True while a drag or resize gesture is in progress: the geometry
+  // transition is disabled so the window follows the pointer 1:1 instead of
+  // easing behind it.
+  const [interacting, setInteracting] = useState(false);
   const sizedRef = useRef(false);
   const boxRef = useRef<TerminalBox | null>(box);
   boxRef.current = box;
@@ -73,6 +77,22 @@ export function useTerminalWindow(view: TerminalViewport): UseTerminalWindowResu
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view.vw, view.vh]);
+
+  const beginGesture = useCallback((mv: (ev: PointerEvent) => void): void => {
+    setInteracting(true);
+    const prevUserSelect = document.body.style.userSelect;
+    document.body.style.userSelect = 'none';
+    const up = (): void => {
+      window.removeEventListener('pointermove', mv);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      document.body.style.userSelect = prevUserSelect;
+      setInteracting(false);
+    };
+    window.addEventListener('pointermove', mv);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  }, []);
 
   const toggleMin = useCallback(() => setMin((m) => !m), []);
   const toggleMax = useCallback(() => {
@@ -99,16 +119,12 @@ export function useTerminalWindow(view: TerminalViewport): UseTerminalWindowResu
               }
             : s,
         );
+        // Setting an identical value is a no-op for React (state bail-out).
         setMax(false);
       };
-      const up = (): void => {
-        window.removeEventListener('pointermove', mv);
-        window.removeEventListener('pointerup', up);
-      };
-      window.addEventListener('pointermove', mv);
-      window.addEventListener('pointerup', up);
+      beginGesture(mv);
     },
-    [view.mobile],
+    [view.mobile, beginGesture],
   );
 
   const onResizeStart = useCallback((e: ReactPointerEvent) => {
@@ -132,13 +148,8 @@ export function useTerminalWindow(view: TerminalViewport): UseTerminalWindowResu
       );
       setMax(false);
     };
-    const up = (): void => {
-      window.removeEventListener('pointermove', mv);
-      window.removeEventListener('pointerup', up);
-    };
-    window.addEventListener('pointermove', mv);
-    window.addEventListener('pointerup', up);
-  }, []);
+    beginGesture(mv);
+  }, [beginGesture]);
 
   const open = !min;
   const mob = view.mobile;
@@ -162,7 +173,9 @@ export function useTerminalWindow(view: TerminalViewport): UseTerminalWindowResu
     tW,
     tH,
     tRadius: mob ? '14px 14px 0 0' : '14px',
-    tTransition: 'height 280ms cubic-bezier(0.22,1,0.36,1), top 280ms cubic-bezier(0.22,1,0.36,1)',
+    tTransition: interacting
+      ? 'none'
+      : 'height 280ms cubic-bezier(0.22,1,0.36,1), top 280ms cubic-bezier(0.22,1,0.36,1)',
   };
 
   const camBottom = mob ? `${sheetH + (open ? 0 : -sheetH + 36) + 12}px` : '16px';

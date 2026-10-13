@@ -111,4 +111,41 @@ describe('useTerminalWindow', () => {
     expect(result.current.box!.w).toBe(Math.max(340, before.w - 50));
     act(() => window.dispatchEvent(new MouseEvent('pointerup')));
   });
+  it('animates height/top by default (minimize/maximize)', () => {
+    const { result } = renderHook(() => useTerminalWindow({ vw: 1024, vh: 768, mobile: false }));
+    expect(result.current.geom.tTransition).toContain('top 280ms');
+    expect(result.current.geom.tTransition).toContain('height 280ms');
+  });
+
+  it('disables the geometry transition while dragging so the window tracks the cursor', () => {
+    const { result } = renderHook(() => useTerminalWindow({ vw: 1024, vh: 768, mobile: false }));
+    act(() => {
+      result.current.onDragStart({ target: document.createElement('div'), clientX: 100, clientY: 100 } as unknown as React.PointerEvent);
+    });
+    expect(result.current.geom.tTransition).toBe('none');
+    expect(document.body.style.userSelect).toBe('none');
+    act(() => {
+      window.dispatchEvent(new MouseEvent('pointermove', { clientX: 130, clientY: 150 }));
+    });
+    expect(result.current.geom.tTransition).toBe('none');
+    act(() => window.dispatchEvent(new MouseEvent('pointerup')));
+    expect(result.current.geom.tTransition).toContain('top 280ms');
+    expect(document.body.style.userSelect).toBe('');
+  });
+
+  it('disables the geometry transition while resizing and restores it after pointerup', () => {
+    const { result } = renderHook(() => useTerminalWindow({ vw: 1024, vh: 768, mobile: false }));
+    act(() => {
+      result.current.onResizeStart({
+        target: document.createElement('div'),
+        clientX: 200,
+        clientY: 200,
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      } as unknown as React.PointerEvent);
+    });
+    expect(result.current.geom.tTransition).toBe('none');
+    act(() => window.dispatchEvent(new MouseEvent('pointerup')));
+    expect(result.current.geom.tTransition).toContain('height 280ms');
+  });
 });
