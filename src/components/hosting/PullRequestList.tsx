@@ -28,7 +28,7 @@ export function PullRequestList({ prs, onNew, onOpen }: PullRequestListProps) {
         <ul className={styles.list}>
           {items.map((item) => (
             <li key={item.id}>
-              <button type="button" onClick={() => onOpen(item.id)} className={styles.row}>
+              <button type="button" onClick={() => onOpen(item.id)} className={styles.row} style={{ borderLeftColor: item.badge.color }}>
                 <span className={styles.badge} style={{ color: item.badge.color, background: item.badge.bg }}>
                   {item.badge.text}
                 </span>

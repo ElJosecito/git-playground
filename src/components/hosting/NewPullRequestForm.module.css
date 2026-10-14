@@ -29,6 +29,7 @@
   display: flex;
   align-items: flex-end;
   gap: var(--space-4);
+  flex-wrap: wrap;
 }
 
 .arrow {
@@ -41,6 +42,7 @@
   flex-direction: column;
   gap: var(--space-2);
   flex: 1;
+  min-width: 140px;
 }
 
 .label {
@@ -52,7 +54,8 @@
 }
 
 .input,
-.textarea {
+.textarea,
+.select {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
@@ -62,15 +65,26 @@
   font-family: inherit;
 }
 
+.select {
+  cursor: pointer;
+}
+
 .textarea {
   min-height: 90px;
   resize: vertical;
 }
 
 .input:disabled,
-.textarea:disabled {
+.textarea:disabled,
+.select:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.pushHint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 .error {

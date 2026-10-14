@@ -87,18 +87,28 @@
 
 .mergeButton {
   align-self: flex-start;
-  height: 32px;
+  height: 34px;
   padding: 0 var(--space-6);
   border-radius: var(--radius-md);
   border: none;
   background: var(--success);
   color: var(--bg-canvas);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.mergeButton:hover:not(:disabled) {
+  filter: brightness(1.08);
 }
 
 .mergeButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mergeButton {
+    transition: filter var(--dur-fast) var(--ease-out);
+  }
 }

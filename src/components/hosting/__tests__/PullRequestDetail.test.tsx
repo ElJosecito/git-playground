@@ -26,7 +26,29 @@ function makeView(overrides: Partial<PrView> = {}): PrView {
 }
 
 describe('PullRequestDetail', () => {
-  it('shows the title, status badge, and source→target branches', () => {
+  // A11y fix (fresh-context review): navigating here from PR creation (or
+  // between PRs, since `HostingView` remounts this component per PR id via
+  // `key={prView.pr.id}`) must move focus somewhere meaningful — otherwise
+  // a screen-reader user has no cue that the view actually changed.
+  it('moves focus to the PR title heading on mount', () => {
+    render(
+      <PullRequestDetail
+        view={makeView({ pr: makePr({ title: 'Arregla el bug' }) })}
+        tab="conversation"
+        onSetTab={vi.fn()}
+        onComment={vi.fn()}
+        onClose={vi.fn()}
+        onReopen={vi.fn()}
+        onMerge={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+    const heading = screen.getByText('Arregla el bug');
+    expect(heading).toHaveFocus();
+    expect(heading).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('shows the title, status badge, and source→target branch chips', () => {
     render(
       <PullRequestDetail
         view={makeView({ pr: makePr({ title: 'Arregla el bug' }) })}
@@ -41,7 +63,73 @@ describe('PullRequestDetail', () => {
     );
     expect(screen.getByText('Arregla el bug')).toBeInTheDocument();
     expect(screen.getByText('Abierto')).toBeInTheDocument();
-    expect(screen.getByText('#1 · feature → main')).toBeInTheDocument();
+    expect(screen.getByText('#1')).toBeInTheDocument();
+    expect(screen.getByText('feature')).toBeInTheDocument();
+    expect(screen.getByText('main')).toBeInTheDocument();
+  });
+
+  // UX fix: creating a PR must not read as "accepted immediately" — an
+  // open PR's detail shows a callout near the merge box making clear it's
+  // still open and naming the merge target.
+  it('shows an "open, not yet merged" callout near the merge box for an open PR', () => {
+    render(
+      <PullRequestDetail view={makeView({ pr: makePr({ target: 'main' }) })} tab="conversation" onSetTab={vi.fn()} onComment={vi.fn()} onClose={vi.fn()} onReopen={vi.fn()} onMerge={vi.fn()} onBack={vi.fn()} />,
+    );
+    expect(screen.getByText(/está abierto/)).toBeInTheDocument();
+    expect(screen.getByText(/origin\/main/)).toBeInTheDocument();
+  });
+
+  it('does NOT show the "open" callout for a merged PR', () => {
+    render(
+      <PullRequestDetail
+        view={makeView({ pr: makePr({ status: 'merged', target: 'main' }), mergeability: null })}
+        tab="conversation"
+        onSetTab={vi.fn()}
+        onComment={vi.fn()}
+        onClose={vi.fn()}
+        onReopen={vi.fn()}
+        onMerge={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText(/está abierto/)).not.toBeInTheDocument();
+  });
+
+  // UX fix: a merged PR (manual merge, or auto-detected "external" merge)
+  // only ever updates origin — the local target branch hasn't moved. This
+  // callout explains the `git switch`/`git pull` needed to bring it over.
+  it('shows the local-sync guidance callout for a manually-merged PR', () => {
+    render(
+      <PullRequestDetail
+        view={makeView({ pr: makePr({ status: 'merged', target: 'main', timeline: [{ kind: 'merged', strategy: 'merge', hash: 'h1', at: 1 }] }), mergeability: null })}
+        tab="conversation"
+        onSetTab={vi.fn()}
+        onComment={vi.fn()}
+        onClose={vi.fn()}
+        onReopen={vi.fn()}
+        onMerge={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/origin\/main/)).toBeInTheDocument();
+    expect(screen.getByText(/git switch main/)).toBeInTheDocument();
+    expect(screen.getByText(/git pull/)).toBeInTheDocument();
+  });
+
+  it('shows the local-sync guidance callout for an externally-merged PR too', () => {
+    render(
+      <PullRequestDetail
+        view={makeView({ pr: makePr({ status: 'merged', target: 'main', timeline: [{ kind: 'merged', strategy: 'external', hash: 'h1', at: 1 }] }), mergeability: null })}
+        tab="conversation"
+        onSetTab={vi.fn()}
+        onComment={vi.fn()}
+        onClose={vi.fn()}
+        onReopen={vi.fn()}
+        onMerge={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/git switch main/)).toBeInTheDocument();
   });
 
   it('shows commits only when the (externally-controlled) tab prop is "commits"', () => {

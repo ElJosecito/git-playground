@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HostingView } from '../HostingView';
 import type { PullRequest } from '../../../engine/hosting/types';
-import type { HostingOutcome } from '../../../app/useGitPlayground';
+import type { CreatePrOutcome } from '../../../app/useGitPlayground';
 
 // New behavior (spec "hosting-web-view" domain, "View Toggle" requirement).
 // Fake browser chrome (URL bar reflecting the route) wrapping the list/new
@@ -58,16 +58,20 @@ describe('HostingView', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('wires onCreate/onGoToList through to the creation form (navigates back to the list after a successful create)', async () => {
-    const onCreate = vi.fn((): HostingOutcome => ({ ok: true }));
-    const onGoToList = vi.fn();
+  // UX fix: creating a PR must land the user on ITS detail (not back on the
+  // list), so it reads as "open, not yet merged" instead of "accepted
+  // immediately".
+  it('wires onCreate through to the creation form and navigates to the new PR\'s detail (not the list) on success', async () => {
+    const onCreate = vi.fn((): CreatePrOutcome => ({ ok: true, id: 9 }));
+    const onGoToPr = vi.fn();
     const user = userEvent.setup();
-    render(<HostingView route={{ kind: 'new' }} prs={[]} originBranches={['main']} prView={null} {...baseProps()} onCreate={onCreate} onGoToList={onGoToList} />);
-    await user.type(screen.getByLabelText('Comparar'), 'feature');
+    render(
+      <HostingView route={{ kind: 'new' }} prs={[]} originBranches={['main', 'feature']} prView={null} {...baseProps()} onCreate={onCreate} onGoToPr={onGoToPr} />,
+    );
     await user.type(screen.getByLabelText('Título'), 'Mi cambio');
     await user.click(screen.getByText('Crear pull request'));
     expect(onCreate).toHaveBeenCalledWith({ source: 'feature', target: 'main', title: 'Mi cambio', body: '' });
-    expect(onGoToList).toHaveBeenCalledTimes(1);
+    expect(onGoToPr).toHaveBeenCalledWith(9);
   });
 
   // New behavior (Phase 4): the list's rows are clickable, navigating to the
@@ -114,6 +118,9 @@ describe('HostingView', () => {
     );
     expect(screen.getByLabelText('Estrategia de fusión')).toHaveValue('merge');
     expect(screen.getByRole('checkbox')).not.toBeChecked();
+    // A11y: the remount-per-PR (`key={prView.pr.id}`) also moves focus to
+    // the newly-shown PR's title, so switching PRs is announced too.
+    expect(screen.getByText('PR 2')).toHaveFocus();
   });
 
   it('falls back to the list when on a `pr` route with no matching prView (unknown id)', () => {

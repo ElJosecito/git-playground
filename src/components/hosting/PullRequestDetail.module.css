@@ -30,6 +30,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-5);
+  flex-wrap: wrap;
 }
 
 .badge {
@@ -45,17 +46,65 @@
   flex-direction: column;
   gap: 2px;
   flex: 1;
+  min-width: 0;
 }
 
 .title {
+  margin: 0;
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
+.title:focus-visible {
+  outline: 2px solid var(--success);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
 .subtitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.prNumber {
   font: 12px var(--font-mono);
   color: var(--text-secondary);
+}
+
+.branchChip {
+  font: 12px var(--font-mono);
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
+.arrow {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.openCallout {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid var(--success);
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mergedCallout {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: rgba(103, 232, 249, 0.08);
+  border: 1px solid var(--t-cyan);
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .secondaryButton {

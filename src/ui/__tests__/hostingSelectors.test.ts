@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   canReopen,
+  defaultCompareBranch,
   mergeBlockedExplanation,
+  mergedLocalSyncGuidance,
   mergeOutdatedWarning,
   noOriginBranchesHint,
+  openPrMergeCallout,
+  originBranchesPushHint,
   prListItems,
   rebaseDisabledHint,
   statusBadge,
@@ -159,6 +163,58 @@ describe('mergeOutdatedWarning', () => {
 describe('rebaseDisabledHint', () => {
   it('explains the rebase-only conflict with a local fix', () => {
     expect(rebaseDisabledHint()).toContain('rebas');
+  });
+});
+
+// New behavior (UX fix: branch pickers now always offer every origin
+// branch via a `<select>` instead of a free-text `<datalist>` input —
+// "Comparar" defaults to the first origin branch that isn't the base).
+describe('defaultCompareBranch', () => {
+  it('picks the first origin branch that is not the base', () => {
+    expect(defaultCompareBranch(['main', 'feature'], 'main')).toBe('feature');
+  });
+
+  it('skips over the base even when it is first in the list', () => {
+    expect(defaultCompareBranch(['feature', 'main'], 'main')).toBe('feature');
+  });
+
+  it('returns an empty string when every origin branch is the base (nothing else to compare)', () => {
+    expect(defaultCompareBranch(['main'], 'main')).toBe('');
+  });
+
+  it('returns an empty string when there are no origin branches at all', () => {
+    expect(defaultCompareBranch([], 'main')).toBe('');
+  });
+});
+
+describe('originBranchesPushHint', () => {
+  it('explains that only pushed branches appear, with the push command', () => {
+    const text = originBranchesPushHint();
+    expect(text).toContain('origin');
+    expect(text).toContain('git push -u origin');
+  });
+});
+
+// New behavior (UX fix: creating a PR must not read as "accepted
+// immediately" — the merge box area makes clear an open PR is NOT merged
+// yet).
+describe('openPrMergeCallout', () => {
+  it('names the target branch and says the PR is still open', () => {
+    const text = openPrMergeCallout('main');
+    expect(text.toLowerCase()).toContain('abierto');
+    expect(text).toContain('origin/main');
+  });
+});
+
+// New behavior (UX fix: after a merge — manual or the automatic "external"
+// kind sync detects — the local target branch has NOT moved; this explains
+// how to bring it over).
+describe('mergedLocalSyncGuidance', () => {
+  it('names the target branch and gives the switch+pull commands', () => {
+    const text = mergedLocalSyncGuidance('main');
+    expect(text).toContain('origin/main');
+    expect(text).toContain('git switch main');
+    expect(text).toContain('git pull');
   });
 });
 

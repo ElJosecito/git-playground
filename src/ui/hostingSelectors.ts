@@ -72,6 +72,23 @@ export function noOriginBranchesHint(): string {
   return 'Todavía no hay ramas en origin. Sube una con git push -u origin <rama>.';
 }
 
+/** `NewPullRequestForm`'s "Comparar" default: the first origin branch that
+ * isn't `base` (so the two pickers never start on the same branch), or `''`
+ * (rendered as the "Elige una rama" placeholder option) when none exists —
+ * UX fix: the picker used to default to an empty free-text field even when
+ * a perfectly good branch was available to compare against. */
+export function defaultCompareBranch(originBranches: string[], base: string): string {
+  return originBranches.find((b) => b !== base) ?? '';
+}
+
+/** Hint shown under the branch pickers in the creation form, always
+ * visible (not just when origin is empty — see `noOriginBranchesHint`) —
+ * UX fix: a user who pushed a branch couldn't find it in the old free-text
+ * `<datalist>` input and assumed the form was broken. */
+export function originBranchesPushHint(): string {
+  return 'Solo aparecen las ramas que ya subiste a origin. Si falta la tuya: git push -u origin <rama>.';
+}
+
 // --- PR detail / merge-box copy (Phase 4) ---------------------------------
 // Pure Spanish copy for `PullRequestDetail`/`MergeBox`/`ConversationTab`
 // (design "File Changes": these components read live engine data via
@@ -145,4 +162,24 @@ export function rebaseDisabledHint(): string {
  * this mirrors it so the button doesn't invite a guaranteed-to-fail click). */
 export function canReopen(pr: PullRequest): boolean {
   return pr.status === 'closed' && pr.closeReason !== 'source-deleted';
+}
+
+/** Callout shown near the merge box on an OPEN PR's detail — UX fix: a user
+ * created a PR and thought it was "accepted immediately"; this makes clear
+ * creating a PR never merges it, and names exactly which origin branch the
+ * merge box below targets. */
+export function openPrMergeCallout(target: string): string {
+  return `Este pull request está abierto. Fusiónalo abajo para llevar los cambios a origin/${target}.`;
+}
+
+/** Callout shown on a MERGED PR's detail (manual merge or the automatic
+ * "external" kind `syncHosting` applies) — UX fix: a user merged (or saw
+ * a PR auto-marked merged) and expected their local branch to already have
+ * the changes. `mergePullRequest`/`syncHosting` only ever write
+ * `s.remote.branches` (design's "Server Merge Mechanics"), so the local
+ * branch genuinely hasn't moved until `git pull`. Uses backtick-delimited
+ * commands, same convention as `ui/selectors.ts`'s `resolverModel` hint —
+ * callers render them via `codeSegs`. */
+export function mergedLocalSyncGuidance(target: string): string {
+  return `Se fusionó en origin/${target}, pero tu rama local ${target} todavía no cambió. Para traerla: \`git switch ${target}\` y luego \`git pull\`.`;
 }
