@@ -77,12 +77,18 @@ export type ConflictMode = 'mia' | 'suya' | 'ambas';
  * ORIGINATING form/view to render inline — never the terminal. */
 export type HostingOutcome = { ok: true } | { ok: false; lines: string[] };
 
+/** `hosting.create`'s own outcome shape — UX fix: the caller (`HostingView`)
+ * must navigate to the newly-opened PR's detail instead of back to the
+ * list, so success carries the new PR's id (read off the `pr-opened` event
+ * `createPr` always emits on success, never guessed from list order). */
+export type CreatePrOutcome = { ok: true; id: number } | { ok: false; lines: string[] };
+
 /** The `hosting` handler group (design: "Op failures ... Handler skips
  * applyResult on error"). Every member follows the same shape: error ->
  * `{ok:false,lines}` for the caller to render inline, success -> applyResult
  * (persist + choreo.after -> explicar() toast) and `{ok:true}`. */
 export interface HostingHandlers {
-  create(input: CreatePullRequestInput): HostingOutcome;
+  create(input: CreatePullRequestInput): CreatePrOutcome;
   comment(id: number, body: string): HostingOutcome;
   close(id: number): HostingOutcome;
   reopen(id: number): HostingOutcome;
@@ -407,13 +413,24 @@ export function useGitPlayground(
   // `salida` (the rejection's markup-encoded lines, e.g. the push hint) is
   // handed back to the caller for inline display instead.
   const hostingCreate = useCallback(
-    (input: CreatePullRequestInput): HostingOutcome => {
+    (input: CreatePullRequestInput): CreatePrOutcome => {
       const repo = repoRef.current ?? GitEngine.vacio();
       const res = GitEngine.createPullRequest(repo, input);
       onActionRef.current?.({ kind: 'hosting', op: 'create', ok: !res.error });
       if (res.error) return { ok: false, lines: res.salida };
       applyResult(res, null);
-      return { ok: true };
+      // `createPr` always emits exactly one `pr-opened` event on success
+      // (hosting/create.ts) — read the new id off it rather than guessing
+      // from list order (newest-id-first is a display convention, not a
+      // write-order guarantee). Type-narrow instead of casting, and never
+      // throw if that invariant is somehow violated: fall back to the
+      // newest PR's id (highest id in the post-apply state) so the caller
+      // still gets a usable, correctly-typed `CreatePrOutcome`.
+      const opened = res.eventos.find((e): e is Extract<GitEvent, { type: 'pr-opened' }> => e.type === 'pr-opened');
+      if (opened) return { ok: true, id: opened.id };
+      const prs = GitEngine.listPullRequests(res.estado);
+      const fallbackId = prs.reduce((max, pr) => Math.max(max, pr.id), 0);
+      return { ok: true, id: fallbackId };
     },
     [applyResult],
   );

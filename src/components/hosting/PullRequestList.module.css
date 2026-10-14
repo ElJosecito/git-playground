@@ -59,6 +59,7 @@
   gap: var(--space-5);
   padding: var(--space-5) var(--space-6);
   border: 1px solid var(--border);
+  border-left: 3px solid transparent;
   border-radius: var(--radius-lg);
   background: var(--surface-solid);
   width: 100%;
@@ -69,6 +70,12 @@
 
 .row:hover {
   background: var(--hover);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .row {
+    transition: background-color var(--dur-fast) var(--ease-out);
+  }
 }
 
 .badge {

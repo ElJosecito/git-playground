@@ -16,7 +16,7 @@ import type { HostingRoute, HostingTab } from '../../ui/hostingSelectors';
 import type { PullRequest, MergeStrategy } from '../../engine/hosting/types';
 import type { PrView } from '../../engine/hosting/view';
 import type { CreatePullRequestInput } from '../../engine/hosting/create';
-import type { HostingOutcome } from '../../app/useGitPlayground';
+import type { CreatePrOutcome, HostingOutcome } from '../../app/useGitPlayground';
 import { PullRequestList } from './PullRequestList';
 import { NewPullRequestForm } from './NewPullRequestForm';
 import { PullRequestDetail } from './PullRequestDetail';
@@ -34,7 +34,7 @@ export interface HostingViewProps {
   onGoToNew(): void;
   onGoToPr(id: number): void;
   onSetTab(tab: HostingTab): void;
-  onCreate(input: CreatePullRequestInput): HostingOutcome;
+  onCreate(input: CreatePullRequestInput): CreatePrOutcome;
   onCommentPr(id: number, body: string): HostingOutcome;
   onClosePr(id: number): HostingOutcome;
   onReopenPr(id: number): HostingOutcome;
@@ -73,7 +73,10 @@ export function HostingView({
       <div className={styles.body}>
         {route.kind === 'list' && <PullRequestList prs={prs} onNew={onGoToNew} onOpen={onGoToPr} />}
         {route.kind === 'new' && (
-          <NewPullRequestForm originBranches={originBranches} onCreate={onCreate} onCreated={onGoToList} onCancel={onGoToList} />
+          // UX fix: a successful create navigates straight to the new PR's
+          // detail (not the list) so "Abierto" is immediately visible —
+          // see `NewPullRequestForm`'s `onCreated(id)`.
+          <NewPullRequestForm originBranches={originBranches} onCreate={onCreate} onCreated={onGoToPr} onCancel={onGoToList} />
         )}
         {route.kind === 'pr' &&
           (prView ? (

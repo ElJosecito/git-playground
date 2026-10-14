@@ -450,11 +450,68 @@ describe('useGitPlayground', () => {
         outcome = result.current.hosting.create({ source: 'feature', target: 'main', title: 'Mi cambio', body: '' });
       });
 
-      expect(outcome).toEqual({ ok: true });
+      expect(outcome).toEqual({ ok: true, id: expect.any(Number) });
       expect(result.current.state.lines.length).toBe(linesBefore);
       const prs = GitEngine.listPullRequests(result.current.state.repo!);
       expect(prs).toHaveLength(1);
       expect(prs[0]).toMatchObject({ source: 'feature', target: 'main', title: 'Mi cambio', status: 'open' });
+    });
+
+    // UX fix: a user who just opened a PR needs to land on ITS detail (not
+    // the list) to see that it's "Abierto" and not yet merged — the create
+    // outcome must carry the new PR's id, taken from the `pr-opened` event
+    // `createPr` always emits on success, not guessed from list order.
+    it('returns the new PR id on success, matching the created PR', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      act(() => {
+        result.current.run('git checkout -b feature');
+        result.current.run('echo hola > notas.txt');
+        result.current.run('git add notas.txt');
+        result.current.run('git commit -m feature');
+        result.current.run('git push -u origin feature');
+      });
+
+      let outcome: ReturnType<typeof result.current.hosting.create> | undefined;
+      act(() => {
+        outcome = result.current.hosting.create({ source: 'feature', target: 'main', title: 'Mi cambio', body: '' });
+      });
+
+      expect(outcome!.ok).toBe(true);
+      const prs = GitEngine.listPullRequests(result.current.state.repo!);
+      expect((outcome as { ok: true; id: number }).id).toBe(prs[0]!.id);
+    });
+
+    // Defensive fallback (fresh-context review finding): `createPr` always
+    // emits a `pr-opened` event on success in practice, but `hostingCreate`
+    // must not crash the UI (via an unsafe cast) if that invariant is ever
+    // violated — it degrades to the newest PR's id instead of throwing.
+    it('degrades gracefully (no throw) and still returns a usable id when the success result has no pr-opened event', () => {
+      const { result } = renderHook(() => useGitPlayground());
+      act(() => {
+        result.current.run('git checkout -b feature');
+        result.current.run('echo hola > notas.txt');
+        result.current.run('git add notas.txt');
+        result.current.run('git commit -m feature');
+        result.current.run('git push -u origin feature');
+      });
+
+      const realCreate = GitEngine.createPullRequest.bind(GitEngine);
+      const spy = vi.spyOn(GitEngine, 'createPullRequest').mockImplementation((estado, input) => {
+        const res = realCreate(estado, input);
+        return { ...res, eventos: res.eventos.filter((e) => e.type !== 'pr-opened') };
+      });
+
+      let outcome: ReturnType<typeof result.current.hosting.create> | undefined;
+      expect(() => {
+        act(() => {
+          outcome = result.current.hosting.create({ source: 'feature', target: 'main', title: 'Mi cambio', body: '' });
+        });
+      }).not.toThrow();
+
+      expect(outcome!.ok).toBe(true);
+      const prs = GitEngine.listPullRequests(result.current.state.repo!);
+      expect((outcome as { ok: true; id: number }).id).toBe(prs[0]!.id);
+      spy.mockRestore();
     });
   });
 
